@@ -4,6 +4,8 @@ import (
  "bytes"
  "errors"
  "image"
+ _ "image/gif"
+ "encoding/binary"
  _ "image/jpeg"
  _ "image/png"
  "io"
@@ -14,7 +16,7 @@ import (
  "time"
 )
 
-const maxAvatarBytes=2*1024*1024
+const maxAvatarBytes=4*1024*1024
 type avatarService struct {sync.RWMutex; file string}
 func newAvatarService()*avatarService{
  dir,e:=os.UserConfigDir()
@@ -22,13 +24,57 @@ func newAvatarService()*avatarService{
  return &avatarService{file:filepath.Join(dir,"PinkBunny","avatar.img")}
 }
 func inspectAvatar(data []byte)(string,error){
- if len(data)==0||len(data)>maxAvatarBytes{return "",errors.New("file must be 1 byte to 2MB")}
+ if len(data)==0||len(data)>maxAvatarBytes{return "",errors.New("file must be 1 byte to 4MB")}
  mime:=http.DetectContentType(data)
- if mime!="image/png"&&mime!="image/jpeg"{return "",errors.New("only PNG and JPEG supported")}
+ if len(data)>=12&&string(data[:4])=="RIFF"&&string(data[8:12])=="WEBP" {mime="image/webp"}
+ if mime=="image/webp"{
+  width,height,err:=webpDimensions(data)
+  if err!=nil||width<1||height<1||width>2048||height>2048{return "",errors.New("invalid WebP or dimensions")}
+  return mime,nil
+ }
+ if mime!="image/png"&&mime!="image/jpeg"&&mime!="image/gif"{return "",errors.New("only PNG, JPEG, GIF and WebP supported")}
  config,format,err:=image.DecodeConfig(bytes.NewReader(data))
  if err!=nil||config.Width<1||config.Height<1||config.Width>2048||config.Height>2048{return "",errors.New("invalid image or dimensions")}
- if (mime=="image/png"&&format!="png")||(mime=="image/jpeg"&&format!="jpeg"){return "",errors.New("invalid image format")}
+ if (mime=="image/png"&&format!="png")||(mime=="image/jpeg"&&format!="jpeg")||(mime=="image/gif"&&format!="gif"){return "",errors.New("invalid image format")}
  return mime,nil
+}
+// Validate RIFF chunk sizes and the VP8, VP8L or VP8X dimension headers.
+// Browser/OBS decodes and animates WebP; no external decoder dependency is needed.
+func webpDimensions(data []byte)(int,int,error){
+ invalid:=errors.New("invalid WebP container")
+ if len(data)<20||string(data[:4])!="RIFF"||string(data[8:12])!="WEBP"{return 0,0,invalid}
+ if uint64(binary.LittleEndian.Uint32(data[4:8]))+8!=uint64(len(data)){return 0,0,invalid}
+ width,height:=0,0
+ hasImage:=false
+ for p:=12;p+8<=len(data);{
+  tag:=string(data[p:p+4]);n:=uint64(binary.LittleEndian.Uint32(data[p+4:p+8]));start:=p+8
+  if n>uint64(len(data)-start){return 0,0,invalid}
+  chunk:=data[start:start+int(n)]
+  switch tag{
+  case "VP8X":
+   if len(chunk)<10{return 0,0,invalid}
+   width=1+int(chunk[4])+(int(chunk[5])<<8)+(int(chunk[6])<<16)
+   height=1+int(chunk[7])+(int(chunk[8])<<8)+(int(chunk[9])<<16)
+  case "VP8 ":
+   if len(chunk)<10||chunk[3]!=0x9d||chunk[4]!=0x01||chunk[5]!=0x2a{return 0,0,invalid}
+   if width==0{width=int(binary.LittleEndian.Uint16(chunk[6:8])&0x3fff);height=int(binary.LittleEndian.Uint16(chunk[8:10])&0x3fff)}
+   hasImage=true
+  case "VP8L":
+   if len(chunk)<5||chunk[0]!=0x2f{return 0,0,invalid}
+   packed:=binary.LittleEndian.Uint32(chunk[1:5])
+   if width==0{width=int(packed&0x3fff)+1;height=int((packed>>14)&0x3fff)+1}
+   hasImage=true
+  case "ANMF":
+   if len(chunk)<16{return 0,0,invalid}
+   hasImage=true
+  }
+  if n>uint64(len(data)-start)||int(n)>len(data)-start{return 0,0,invalid}
+  p=start+int(n)+int(n&1)
+  if p>len(data){return 0,0,invalid}
+  if p==len(data){break}
+ }
+ if !hasImage||width<1||height<1{return 0,0,invalid}
+ return width,height,nil
 }
 func (a *avatarService) info()(bool,int64){
  a.RLock();defer a.RUnlock()
