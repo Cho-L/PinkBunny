@@ -7,22 +7,50 @@ function validServerHost(host){
  return a===10||(a===172&&b>=16&&b<=31)||(a===192&&b===168);
 }
 let polling=false,lastPoll=0;
+async function reportCommand(host,key,command,outcome){
+ if(!command.id)return; // Older streaming-PC builds did not issue IDs.
+ try{
+  await fetch(`http://${host}:38765/api/command-result`,{
+   method:'POST',
+   headers:{'Content-Type':'application/json','X-Bunny-Key':key,'X-Bunny-Extension':'1'},
+   body:JSON.stringify({id:command.id,tabId:command.tabId,ok:outcome.ok===true,
+    error:outcome.ok?'':String(outcome.error||'유튜브 제어 실패').slice(0,160)}),
+   signal:AbortSignal.timeout(3500)
+  });
+ }catch{
+  // The streaming PC will time out and show "no acknowledgement".
+ }
+}
 async function pollControls(host,key){
  if(polling||Date.now()-lastPoll<900)return;
  polling=true;lastPoll=Date.now();
  try{
-  const r=await fetch(`http://${host}:38765/api/commands`,{headers:{'X-Bunny-Key':key,'X-Bunny-Extension':'1'},signal:AbortSignal.timeout(3500)});
+  const r=await fetch(`http://${host}:38765/api/commands`,{
+   headers:{'X-Bunny-Key':key,'X-Bunny-Extension':'1'},signal:AbortSignal.timeout(3500)
+  });
   if(!r.ok)return;
   const data=await r.json();
   if(!data.command)return;
   const command=data.command;
-  const tab=await chrome.tabs.get(command.tabId).catch(()=>null);
-  if(!tab)return;
+  let outcome={ok:false,error:'대상 YouTube 탭이 없습니다.'};
   try{
-   const page=new URL(tab.url||'');
-   if(page.protocol!=='https:'||!['www.youtube.com','music.youtube.com'].includes(page.hostname))return;
-  }catch{return;}
-  await chrome.tabs.sendMessage(command.tabId,{type:'pinkbunny-player-command',action:command.action}).catch(()=>{});
+   const tab=await chrome.tabs.get(command.tabId).catch(()=>null);
+   if(tab){
+    let valid=false;
+    try{
+     const page=new URL(tab.url||'');
+     valid=page.protocol==='https:'&&['www.youtube.com','music.youtube.com'].includes(page.hostname);
+    }catch{}
+    if(!valid)outcome={ok:false,error:'대상 탭이 더 이상 YouTube 페이지가 아닙니다.'};
+    else{
+     const answer=await chrome.tabs.sendMessage(command.tabId,{
+      type:'pinkbunny-player-command',action:command.action
+     });
+     outcome=answer?.ok===true?{ok:true}:{ok:false,error:answer?.error||'유튜브 탭에서 실행 응답을 받지 못했습니다.'};
+    }
+   }
+  }catch(e){outcome={ok:false,error:e?.message||'Chrome 탭으로 명령을 전달할 수 없습니다.'};}
+  await reportCommand(host,key,command,outcome);
  }catch{}finally{polling=false;}
 }
 async function send(type,payload){
