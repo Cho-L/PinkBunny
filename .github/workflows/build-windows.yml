@@ -54,8 +54,8 @@ jobs:
             $setup = (Invoke-WebRequest -Uri "http://127.0.0.1:38765/setup" -TimeoutSec 3).Content
             if (-not $setup.Contains("Pink Bunny")) { throw "Setup wizard unavailable" }
             $guide = (Invoke-WebRequest -Uri "http://127.0.0.1:38765/guide" -TimeoutSec 3).Content
-            if (-not $guide.Contains("guide-quickstart-1pc.svg")) { throw "Illustrated guide unavailable" }
-            foreach ($name in @("guide-quickstart-1pc.svg", "guide-quickstart-2pc.svg", "guide-chrome-extension.svg", "guide-obs-source.svg")) {
+            if (-not $guide.Contains("guide-quickstart-1pc.svg") -or -not $guide.Contains("guide-feature-tabs.svg")) { throw "Illustrated install and feature guides unavailable" }
+            foreach ($name in @("guide-quickstart-1pc.svg", "guide-quickstart-2pc.svg", "guide-chrome-extension.svg", "guide-obs-source.svg", "guide-feature-extension.svg", "guide-feature-tabs.svg", "guide-feature-controls.svg", "guide-feature-design.svg", "guide-feature-remote.svg", "guide-feature-filters.svg", "guide-feature-troubleshoot.svg")) {
               $picture = Invoke-WebRequest -Uri "http://127.0.0.1:38765/$name" -TimeoutSec 3
               if ($picture.Headers["Content-Type"] -notmatch "image/svg\+xml" -or -not $picture.Content.Contains("<svg")) {
                 throw "Visual guide was not served as SVG: $name"
