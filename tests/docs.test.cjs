@@ -47,4 +47,29 @@ test('installer and portable zip document packaging remain in sync', () => {
   }
   assert.match(installer, /guide-\*\.svg/);
   assert.match(workflow, /Copy-Item overlay\/guide-\*\.svg/);
+  assert.equal(fs.existsSync(path.join(root,'overlay','guide-feature-extension.svg')),true,'Missing feature guide: extension');
+  assert.equal(fs.existsSync(path.join(root,'overlay','guide-feature-tabs.svg')),true,'Missing feature guide: tabs');
+  assert.equal(fs.existsSync(path.join(root,'overlay','guide-feature-controls.svg')),true,'Missing feature guide: controls');
+  assert.equal(fs.existsSync(path.join(root,'overlay','guide-feature-design.svg')),true,'Missing feature guide: design');
+  assert.equal(fs.existsSync(path.join(root,'overlay','guide-feature-remote.svg')),true,'Missing feature guide: remote');
+  assert.equal(fs.existsSync(path.join(root,'overlay','guide-feature-filters.svg')),true,'Missing feature guide: filters');
+  assert.equal(fs.existsSync(path.join(root,'overlay','guide-feature-troubleshoot.svg')),true,'Missing feature guide: troubleshoot');
+});
+
+
+test('feature tutorial links are embedded in offline guide and available from popup and setup',()=>{
+ const guide=read('overlay/guide.html');
+ const popup=read('extension/popup.html');
+ const setup=read('overlay/setup.html');
+ const manual=read('FEATURE_GUIDE_KO.md');
+ const api=read('main.go');
+ assert.match(guide,/id="features"/);
+ assert.match(popup,/id="openFeatureGuide"/);
+ assert.match(setup,/\/guide#features/);
+ for(const name of ['extension','tabs','controls','design','remote','filters','troubleshoot']){
+  const svg='guide-feature-'+name+'.svg';
+  assert.ok(guide.includes(svg),'Offline guide misses '+svg);
+  assert.ok(manual.includes(svg),'Markdown manual misses '+svg);
+  assert.ok(api.includes(svg),'Embedded HTTP server misses '+svg);
+ }
 });
