@@ -1,6 +1,6 @@
 //go:build windows
 package main
-import ("encoding/base64";"encoding/binary";"fmt";"os";"os/exec";"strings";"unicode/utf16")
+import ("encoding/base64";"encoding/binary";"fmt";"os";"os/exec";"strings";"syscall";"unicode/utf16")
 func runTray() {
  script:=fmt.Sprintf(`Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
@@ -36,6 +36,8 @@ try { [System.Windows.Forms.Application]::Run($context) }
 finally { $timer.Stop(); $timer.Dispose(); $tray.Visible = $false; $tray.Dispose(); $menu.Dispose() }
 `,os.Getpid())
  cmd:=exec.Command("powershell.exe","-NoProfile","-NonInteractive","-STA","-WindowStyle","Hidden","-EncodedCommand",encodePS(script))
+ // CREATE_NO_WINDOW prevents a blank PowerShell console on Windows.
+ cmd.SysProcAttr=&syscall.SysProcAttr{HideWindow:true,CreationFlags:0x08000000}
  _=cmd.Start()
 }
 func encodePS(s string)string{units:=utf16.Encode([]rune(strings.TrimSpace(s)));bytes:=make([]byte,len(units)*2);for i,v:=range units{binary.LittleEndian.PutUint16(bytes[i*2:],v)};return base64.StdEncoding.EncodeToString(bytes)}
