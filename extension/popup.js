@@ -1,3 +1,11 @@
+const fullPage=new URLSearchParams(location.search).get('mode')==='full';
+if(fullPage){
+ document.body.classList.add('full-page');
+ document.getElementById('openDashboard').hidden=true;
+ document.getElementById('uiHint').textContent='큰 화면 모드에서는 드롭다운을 선택해도 창이 사라지지 않습니다.';
+}else{
+ document.getElementById('openDashboard').addEventListener('click',()=>chrome.tabs.create({url:chrome.runtime.getURL('popup.html?mode=full')}));
+}
 const server=document.getElementById('server'),key=document.getElementById('key'),status=document.getElementById('status'),pair=document.getElementById('pair');
 chrome.storage.local.get(['server','key']).then(async s=>{
  server.value=s.server||'127.0.0.1';key.value=s.key||'';
@@ -56,7 +64,8 @@ async function refreshTabs(){
    document.getElementById('connection').textContent='🟢 Pink Bunny 연결됨 · '+(data.tabs||[]).length+'개 유튜브 탭 감지';
  }catch(e){tabsSelect.replaceChildren(new Option('연결 실패 · 새로고침','0'));status.textContent='❌ 서버 연결 실패 · Pink Bunny 실행 여부와 연결 주소를 확인해 주세요.';document.getElementById('connection').textContent='🔴 연결되지 않음 · 연결 설정을 열어 주세요.';}
 }
-document.getElementById('refresh').onclick=refreshTabs;
+document.getElementById('refresh').onclick=async()=>{await refreshTabs();await refreshCurrentTab();};
+tabsSelect.addEventListener('change',()=>{if(fullPage)refreshCurrentTab();});
 document.getElementById('selectTab').onclick=async()=>{
  const cfg=await chrome.storage.local.get(['server','key']);
  if(!cfg.key){status.textContent='먼저 서버와 연결해 주세요.';return;}
@@ -93,12 +102,19 @@ async function authenticated(path,method='GET',body){
 async function refreshCurrentTab(){
  try{
   const [tab]=await chrome.tabs.query({active:true,currentWindow:true});
-  currentId=isYouTubeTab(tab)?tab.id:0;
+  let target=isYouTubeTab(tab)?tab:null;
+  if(!target&&fullPage){
+   const all=await chrome.tabs.query({currentWindow:true});
+   const options=all.filter(isYouTubeTab).sort((a,b)=>(b.lastAccessed||0)-(a.lastAccessed||0));
+   const selected=Number(tabsSelect.value);
+   target=options.find(t=>t.id===selected)||options[0]||null;
+  }
+  currentId=target?.id||0;
   if(!currentId){
    activeVideo.textContent='유튜브 또는 YouTube Music 탭에서 확장 프로그램을 열어 주세요.';
    pinCurrent.disabled=true;toggleCurrent.disabled=true;return;
   }
-  activeVideo.textContent='현재 탭: '+(tab.title||'YouTube').slice(0,75);
+  activeVideo.textContent=(fullPage?'제어 대상 탭: ':'현재 탭: ')+(target?.title||'YouTube').slice(0,75);
   const data=await authenticated('tabs');
   const found=(data.tabs||[]).find(x=>x.tabId===currentId);
   if(!found){
@@ -140,9 +156,15 @@ refreshCurrentTab();
 
 async function executeLocalControl(action){
  const [tab]=await chrome.tabs.query({active:true,currentWindow:true});
- if(!isYouTubeTab(tab)){status.textContent='❌ 유튜브 탭에서 확장 프로그램을 열어 주세요.';return;}
+ let target=isYouTubeTab(tab)?tab:null;
+ if(!target&&fullPage){
+  const all=await chrome.tabs.query({currentWindow:true});
+  const selected=Number(tabsSelect.value);
+  target=all.find(t=>isYouTubeTab(t)&&t.id===selected)||all.filter(isYouTubeTab).sort((a,b)=>(b.lastAccessed||0)-(a.lastAccessed||0))[0];
+ }
+ if(!target){status.textContent='❌ 유튜브 탭을 열어 주세요.';return;}
  try{
-  const r=await chrome.tabs.sendMessage(tab.id,{type:'pinkbunny-player-command',action});
+  const r=await chrome.tabs.sendMessage(target.id,{type:'pinkbunny-player-command',action});
   status.textContent=r?.ok?'✅ 명령을 유튜브에 전달했어요.':'❌ '+(r?.error||'이 탭에서 제어할 수 없어요. 새로고침해 주세요.');
  }catch{status.textContent='❌ 유튜브 탭을 새로고침하고 다시 시도해 주세요.';}
 }
