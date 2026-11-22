@@ -104,3 +104,37 @@ test('extension default HTTP permission is loopback-only; 2-PC host access is op
  assert.match(popup,/chrome\.permissions\.request/);
  assert.match(popup,/A-F0-9\]\{32\}/);
 });
+
+test('all Markdown guide links and images are local files that actually exist',()=>{
+ const manuals=['README.md','GUIDE.md','FEATURE_GUIDE_KO.md','CHANGELOG.md','QA_REPORT.md','POST_KO.md'];
+ for(const name of manuals){
+  const body=read(name);
+  for(const match of body.matchAll(/!?\[[^\]]*\]\(([^)]+)\)/g)){
+   const value=match[1].split('#')[0];
+   if(!value||/^(?:https?:|mailto:)/i.test(value))continue;
+   const location=path.resolve(root,path.dirname(name),decodeURIComponent(value));
+   assert.ok(location.startsWith(root+path.sep),'Documentation link escaped repository: '+value);
+   assert.ok(fs.existsSync(location),'Broken local link in '+name+': '+value);
+  }
+ }
+});
+test('current QA report clearly labels archival issues and does not claim real OBS E2E passed',()=>{
+ const qa=read('QA_REPORT.md');
+ assert.match(qa,/v12\.0\.0/);
+ assert.match(qa,/이전 검증 기록: v11\.0\.1/);
+ assert.match(qa,/실제 Windows Chrome \+ YouTube/);
+ assert.match(qa,/Chrome 명령 처리 결과를 회신/);
+ assert.ok(!qa.includes('That acknowledgement remains future work.'));
+ assert.ok(!qa.includes('does not erase browser history or secure the LAN status endpoint'));
+});
+test('setup diagnosis and command ACK are rendered, but OBS audio verification is manual',()=>{
+ const setup=read('overlay/setup-extra.js');
+ const diag=read('diagnostics.go');
+ const controls=read('control_endpoints.go');
+ assert.match(setup,/\/api\/diagnostics/);
+ assert.match(setup,/\/api\/control\/result/);
+ assert.match(diag,/State:"manual"/);
+ assert.match(diag,/OBS 브라우저 소스/);
+ assert.match(diag,/방송 음악 오디오/);
+ assert.match(controls,/\/api\/command-result/);
+});
