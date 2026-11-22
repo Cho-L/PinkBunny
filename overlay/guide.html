@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Pink Bunny | 그림으로 보는 설치 안내</title>
+<style>
+:root{font-family:"Malgun Gothic",system-ui,-apple-system,sans-serif;color:#493547;background:#fff6fa}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#fff6fa,#f9e6f5);line-height:1.65}
+main{max-width:1080px;margin:24px auto;padding:26px;background:#fff;border:1px solid #f4dce8;border-radius:25px;box-shadow:0 12px 35px #b65e9222}
+h1{font-size:clamp(1.5rem,4vw,2.4rem);margin:0;color:#b34681}h2{font-size:1.3rem;color:#a7407b;margin:26px 0 8px}
+p{margin:8px 0 15px}.sub{color:#83677a}
+.choice{display:flex;flex-wrap:wrap;gap:12px;margin:17px 0}
+button{border:2px solid #e7b1d0;border-radius:13px;background:#fff;color:#9a4377;font-size:1rem;font-weight:700;padding:13px 19px;cursor:pointer}
+button[aria-pressed=true]{border-color:#c75391;background:#f9dcea;color:#713453}
+figure{margin:13px 0;background:#fff9fc;border:1px solid #eed4e3;padding:13px;border-radius:18px;overflow:hidden}
+figure img{width:100%;height:auto;display:block;border-radius:12px}
+figure a{display:block;color:inherit;text-decoration:none}
+figcaption{font-size:.9rem;color:#8f7083;margin-top:8px}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{padding:9px 14px;border-radius:10px;background:#f7e1ef;color:#924371;font-weight:700}
+.note{background:#fdf0f7;padding:13px 18px;border-radius:13px;border-left:4px solid #d16e9f}
+.footer{font-size:.88rem;color:#81697a;margin-top:25px}
+@media(max-width:700px){main{margin:0;border:0;border-radius:0;padding:18px 12px}figure{padding:7px}figcaption{font-size:.78rem}}
+</style>
+</head>
+<body>
+<main>
+<h1>🐰 Pink Bunny 그림 설치 가이드</h1>
+<p class="sub">프로그램을 처음 설치하는 분을 위한 순서 안내입니다. 회원가입은 필요 없어요. Windows 송출 PC에서 시작하세요.</p>
+<h2>가장 먼저! 유튜브 음악을 어느 PC에서 재생하나요?</h2>
+<div class="choice" role="group" aria-label="음악 재생 PC 선택">
+<button id="musicHere" aria-pressed="true">🎵 송출 PC에서 재생해요</button>
+<button id="musicOther" aria-pressed="false">🖥️ 다른 PC에서 재생해요</button>
+</div>
+<p id="modeExplain">2컴 방송이어도 음악을 송출 PC에서 재생하면 이 안내를 선택하세요. 연결 코드는 입력하지 않아도 됩니다.</p>
+<figure>
+<a id="mainImageLink" href="guide-quickstart-1pc.svg" target="_blank" rel="noopener" aria-label="빠른 시작 그림 크게 보기">
+<img id="mainImage" src="guide-quickstart-1pc.svg" alt="송출 PC 한 대에서 유튜브를 재생할 때의 설치 순서"/>
+</a>
+<figcaption>그림을 누르면 확대해서 볼 수 있습니다. 모든 단계는 왼쪽 위부터 순서대로 진행하세요.</figcaption>
+</figure>
+<h2>Chrome 확장 프로그램 등록하기</h2>
+<p>유튜브를 실제로 재생하는 PC의 Chrome에 확장 프로그램을 등록해야 합니다. 설치된 Pink Bunny 폴더의 <strong>extension</strong> 폴더를 선택하세요.</p>
+<figure><a href="guide-chrome-extension.svg" target="_blank" rel="noopener"><img src="guide-chrome-extension.svg" loading="lazy" alt="Chrome 확장 프로그램 등록 과정을 순서대로 표현한 그림"/></a><figcaption>Chrome 화면은 이해를 돕는 예시 그림입니다. 크롬 버전에 따라 버튼 위치가 다를 수 있습니다.</figcaption></figure>
+<h2>OBS 브라우저 소스 추가하기</h2>
+<p>OBS를 실행하는 <strong>송출 PC에서만</strong> 설정합니다. 브라우저 소스 주소는 항상 <strong>http://127.0.0.1:38765</strong>, 너비는 <strong>420</strong>, 높이는 <strong>130</strong>입니다.</p>
+<figure><a href="guide-obs-source.svg" target="_blank" rel="noopener"><img src="guide-obs-source.svg" loading="lazy" alt="OBS 브라우저 소스를 추가하고 URL과 크기를 지정하는 순서의 그림"/></a><figcaption>OBS 화면은 이해를 돕는 예시 그림입니다. 실제 OBS 버전에 따라 버튼 위치가 다를 수 있습니다.</figcaption></figure>
+<h2>안 될 때 가장 먼저 확인할 것</h2>
+<div class="note">Pink Bunny가 송출 PC에서 실행 중인가요? Chrome 확장 프로그램에서 연결했나요? 유튜브 탭을 새로고침했나요? OBS 브라우저 소스의 URL과 크기가 올바른가요?</div>
+<p class="sub">※ Pink Bunny는 <strong>영상 제목과 재생 정보</strong>를 OBS에 보여줍니다. <strong>음악 소리 전송</strong>은 별도 OBS 오디오 설정이 필요해요. 두 PC 연결은 같은 신뢰할 수 있는 사설망에서만 사용하고, 연결 주소의 인증 코드를 공개하지 마세요.</p>
+<div class="links">
+<a href="guide-quickstart-1pc.svg" target="_blank" rel="noopener">송출 PC에서 음악 재생</a>
+<a href="guide-quickstart-2pc.svg" target="_blank" rel="noopener">다른 PC에서 음악 재생</a>
+<a href="guide-chrome-extension.svg" target="_blank" rel="noopener">Chrome 안내</a>
+<a href="guide-obs-source.svg" target="_blank" rel="noopener">OBS 안내</a>
+</div>
+<p class="footer">이 가이드는 설치 파일과 함께 제공되는 오프라인 문서입니다. 자동 연결, 방송용 디자인 변경 등은 Pink Bunny 실행 후 열리는 설치 도우미에서 할 수 있습니다.</p>
+</main>
+<script>
+(function(){
+ const main=document.getElementById('mainImage'),link=document.getElementById('mainImageLink'),desc=document.getElementById('modeExplain');
+ const here=document.getElementById('musicHere'),other=document.getElementById('musicOther');
+ function setMode(two){
+  const source=two?'guide-quickstart-2pc.svg':'guide-quickstart-1pc.svg';
+  main.src=source;link.href=source;
+  main.alt=two?'다른 PC에서 유튜브를 재생하는 경우의 설치 순서':'송출 PC에서 유튜브를 재생하는 경우의 설치 순서';
+  here.setAttribute('aria-pressed',String(!two));other.setAttribute('aria-pressed',String(two));
+  desc.textContent=two?'Pink Bunny와 OBS는 송출 PC에, Chrome 확장 프로그램은 음악을 재생하는 다른 PC에 설치하세요.':'2컴 방송이어도 음악을 송출 PC에서 재생하면 이 안내를 선택하세요. 연결 코드는 입력하지 않아도 됩니다.';
+ }
+ here.addEventListener('click',()=>setMode(false));other.addEventListener('click',()=>setMode(true));
+})();
+</script>
+</body>
+</html>
