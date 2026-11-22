@@ -24,7 +24,7 @@ jobs:
         run: |
           go test ./...
           go vet ./...
-          go build -trimpath -ldflags="-s -w" -o PinkBunny.exe .
+          go build -trimpath -ldflags="-s -w -H=windowsgui" -o PinkBunny.exe .
       - name: Create easy-download bundle
         shell: pwsh
         run: |
