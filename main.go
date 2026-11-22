@@ -32,6 +32,8 @@ type Update struct {
  Position float64 `json:"position"`
  Duration float64 `json:"duration"`
  Suppressed bool `json:"suppressed"`
+ NextTitle string `json:"nextTitle,omitempty"`
+ NextChannel string `json:"nextChannel,omitempty"`
 }
 type Tab struct {
  Update
@@ -47,6 +49,8 @@ type Status struct {
  URL string `json:"url"`
  Position float64 `json:"position"`
  Duration float64 `json:"duration"`
+ NextTitle string `json:"nextTitle,omitempty"`
+ NextChannel string `json:"nextChannel,omitempty"`
 }
 type Store struct {
  sync.Mutex
@@ -70,7 +74,7 @@ func (s *Store) snapshot() Status {
  if selected==nil&&len(all)>0{selected=&all[0]}
  if selected==nil{return Status{}}
  s.lastID=selected.TabID
- return Status{true,selected.Playing,selected.Title,selected.Channel,selected.VideoID,selected.URL,selected.Position,selected.Duration}
+ return Status{Connected:true,Playing:selected.Playing,Title:selected.Title,Channel:selected.Channel,VideoID:selected.VideoID,URL:selected.URL,Position:selected.Position,Duration:selected.Duration,NextTitle:selected.NextTitle,NextChannel:selected.NextChannel}
 }
 func (s *Store) publish(){
  st:=s.snapshot();b,_:=json.Marshal(st)
@@ -100,6 +104,7 @@ func update(w http.ResponseWriter,r *http.Request,s *Store,remove bool,key strin
   if e!=nil||u.Scheme!="https"||!(u.Hostname()=="www.youtube.com"||u.Hostname()=="music.youtube.com"||u.Hostname()=="youtube.com"){reply(w,400,map[string]string{"error":"Not YouTube"});return}
   p.Title=clip(p.Title,220);if p.Title==""{reply(w,400,map[string]string{"error":"Empty title"});return}
   p.Channel=clip(p.Channel,100);p.VideoID=clip(p.VideoID,25);p.URL=clip(p.URL,350)
+  p.NextTitle=clip(p.NextTitle,180);p.NextChannel=clip(p.NextChannel,90)
   if math.IsNaN(p.Position)||math.IsInf(p.Position,0)||p.Position<0 {p.Position=0}
   if math.IsNaN(p.Duration)||math.IsInf(p.Duration,0)||p.Duration<0 {p.Duration=0}
   if p.Duration>0&&p.Position>p.Duration {p.Position=p.Duration}
