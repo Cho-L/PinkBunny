@@ -59,3 +59,26 @@ test('no playlist selection means no guessed next track',()=>{
  const m=setup();m.nodes[0]=mockItem('Playing','Artist',false);m.intervals[0]();
  assert.equal(m.messages.at(-1).data.nextTitle,'');
 });
+
+test('play acknowledgement waits for the play promise and confirms playback',async()=>{
+ const m=setup();
+ m.video.paused=true;
+ let result;
+ const keepOpen=m.listeners.message({type:'pinkbunny-player-command',action:'toggle'},null,x=>{result=x});
+ assert.equal(keepOpen,true,'async Chrome message port must remain open');
+ assert.equal(result,undefined,'must not acknowledge until play resolves');
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(result?.ok,true);
+ assert.equal(m.video.paused,false);
+});
+test('autoplay rejection is reported to the streaming PC as a failed command',async()=>{
+ const m=setup();
+ m.video.paused=true;
+ m.video.play=()=>Promise.reject(Error('NotAllowedError: gesture required'));
+ let result;
+ const keepOpen=m.listeners.message({type:'pinkbunny-player-command',action:'toggle'},null,x=>{result=x});
+ assert.equal(keepOpen,true);
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(result?.ok,false);
+ assert.match(result?.error||'',/NotAllowedError/);
+});
