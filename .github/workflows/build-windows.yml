@@ -32,6 +32,31 @@ jobs:
           node --check overlay/theme-settings.js
           Get-Content extension/manifest.json -Raw | ConvertFrom-Json | Out-Null
           go build -trimpath -ldflags="-s -w -H=windowsgui" -o PinkBunny.exe .
+      - name: Smoke-test packaged Windows app and setup endpoints
+        shell: pwsh
+        run: |
+          $exe = Join-Path (Get-Location) "PinkBunny.exe"
+          $app = Start-Process -FilePath $exe -ArgumentList "--silent" -PassThru
+          try {
+            $ready = $false
+            for ($i = 0; $i -lt 25; $i++) {
+              if ($app.HasExited) { throw "PinkBunny.exe terminated before serving requests" }
+              try {
+                $state = Invoke-RestMethod -Uri "http://127.0.0.1:38765/api/status" -TimeoutSec 2
+                if ($null -ne $state.connected) { $ready = $true; break }
+              } catch { Start-Sleep -Milliseconds 400 }
+            }
+            if (-not $ready) { throw "PinkBunny server did not start" }
+            $theme = Invoke-RestMethod -Uri "http://127.0.0.1:38765/api/theme" -TimeoutSec 3
+            if (-not $theme.color) { throw "Theme endpoint returned invalid data" }
+            $avatar = Invoke-RestMethod -Uri "http://127.0.0.1:38765/api/avatar/info" -TimeoutSec 3
+            if ($null -eq $avatar.present) { throw "Avatar info response missing" }
+            $setup = (Invoke-WebRequest -Uri "http://127.0.0.1:38765/setup" -TimeoutSec 3).Content
+            if (-not $setup.Contains("Pink Bunny")) { throw "Setup wizard unavailable" }
+            Write-Host "QA: executable startup, server, theme, avatar and setup PASS"
+          } finally {
+            Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
+          }
       - name: Create easy-download bundle
         shell: pwsh
         run: |
