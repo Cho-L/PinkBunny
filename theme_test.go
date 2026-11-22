@@ -12,6 +12,9 @@ func TestThemeValidation(t *testing.T){
  {"invalid size",Theme{"peach",80,60,true,true,"classic"},false},
  {"old settings accepted",Theme{"pink",78,100,true,true,""},true},
  {"invalid layout",Theme{"pink",78,100,true,true,"<script>"},false},
+ {"custom avatar transform",Theme{Color:"pink",Opacity:78,Scale:100,Animate:true,ShowCover:true,Layout:"classic",AvatarScale:180,AvatarX:-40,AvatarY:40},true},
+ {"avatar size over limit",Theme{Color:"pink",Opacity:78,Scale:100,Layout:"classic",AvatarScale:210},false},
+ {"avatar X over limit",Theme{Color:"pink",Opacity:78,Scale:100,Layout:"classic",AvatarScale:100,AvatarX:41},false},
  }
  for _,c:=range cases{
   t.Run(c.name,func(t *testing.T){
