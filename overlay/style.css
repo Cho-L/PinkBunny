@@ -22,3 +22,6 @@
 .player.layout-cover{height:118px;gap:15px}
 .player.layout-cover .marquee{margin-top:8px}
 .player.layout-cover .rabbit{margin:auto}
+
+/* v8: user-controlled character size and offset, clipped within the art frame. */
+#customAvatar{transform:translate(var(--pb-avatar-x,0px),var(--pb-avatar-y,0px)) scale(var(--pb-avatar-scale,1));transform-origin:center center;transition:transform .12s ease-out}
