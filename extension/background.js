@@ -9,7 +9,11 @@ async function pollControls(host,key){
   if(!data.command)return;
   const command=data.command;
   const tab=await chrome.tabs.get(command.tabId).catch(()=>null);
-  if(!tab||!/^https:\\/\\/(www\\.youtube\\.com|music\\.youtube\\.com)\\//.test(tab.url||''))return;
+  if(!tab)return;
+  try{
+   const page=new URL(tab.url||'');
+   if(page.protocol!=='https:'||!['www.youtube.com','music.youtube.com'].includes(page.hostname))return;
+  }catch{return;}
   await chrome.tabs.sendMessage(command.tabId,{type:'pinkbunny-player-command',action:command.action}).catch(()=>{});
  }catch{}finally{polling=false;}
 }
