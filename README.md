@@ -6,7 +6,7 @@ Pink Bunny는 Chrome에서 재생하는 **YouTube / YouTube Music 영상의 제�
 
 ![송출 PC에서 음악을 재생할 때 Pink Bunny 설치 순서](overlay/guide-quickstart-1pc.svg)
 
-**[📥 최신 Windows 설치 파일 다운로드](https://github.com/Cho-L/PinkBunny/releases/tag/beta)** · [📘 설치 그림 안내](overlay/guide.html#install) · [✨ 기능 사용 그림 7장](overlay/guide.html#features) · [📰 게시글용 소개](POST_KO.md)
+**[📥 최신 Windows 설치 파일 다운로드](https://github.com/Cho-L/PinkBunny/releases/tag/beta)** · [📘 설치 그림 안내](GUIDE.md#install) · [✨ 기능 사용 그림 7장](GUIDE.md#features) · [📰 게시글용 소개](POST_KO.md)
 
 ## 🎵 핵심 기능
 
@@ -38,7 +38,7 @@ Pink Bunny는 Chrome에서 재생하는 **YouTube / YouTube Music 영상의 제�
 
 ### ✨ 기능별 그림 사용 가이드
 
-설치가 끝났다면 **[기능별 그림 가이드 7장 보기](overlay/guide.html#features)**를 열어 보세요. 설치 도우미 및 Chrome 확장 프로그램에도 **그림 사용법 버튼**이 추가되었습니다.
+설치가 끝났다면 **[기능별 그림 가이드 7장 보기](GUIDE.md#features)**를 열어 보세요. 설치 도우미 및 Chrome 확장 프로그램에도 **그림 사용법 버튼**이 추가되었습니다.
 
 - [Chrome 확장 프로그램 기본 조작](overlay/guide-feature-extension.svg)
 - [OBS 표시 탭 고정·숨김](overlay/guide-feature-tabs.svg)
@@ -51,6 +51,8 @@ Pink Bunny는 Chrome에서 재생하는 **YouTube / YouTube Music 영상의 제�
 자세한 주의사항과 기능별 순서는 **[한국어 기능 사용 설명서](FEATURE_GUIDE_KO.md)**를 참고하세요. 그림은 이해를 돕는 UI 예시이며 실제 화면 캡처가 아닙니다.
 
 ### 🖼️ 그림으로 따라 하는 설치
+
+**[📘 설치 이미지 4장 한 번에 보기](GUIDE.md#install)**
 
 - [같은 송출 PC에서 유튜브 재생](overlay/guide-quickstart-1pc.svg)
 - [다른 PC에서 유튜브 재생](overlay/guide-quickstart-2pc.svg)
