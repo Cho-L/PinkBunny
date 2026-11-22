@@ -31,6 +31,7 @@ type Update struct {
  Playing bool `json:"playing"`
  Position float64 `json:"position"`
  Duration float64 `json:"duration"`
+ Suppressed bool `json:"suppressed"`
 }
 type Tab struct {
  Update
@@ -53,13 +54,14 @@ type Store struct {
  lastID int
  pinnedID int
  hidden map[int]bool
+ commands []PlayerCommand
  listeners map[chan Status]struct{}
  lastJSON string
 }
 func (s *Store) snapshot() Status {
  now:=time.Now()
  all:=make([]Tab,0,len(s.tabs))
- for id,t:=range s.tabs {if now.Sub(t.Seen)>12*time.Second{delete(s.tabs,id);delete(s.hidden,id)}else if !s.hidden[id]{all=append(all,t)}}
+ for id,t:=range s.tabs {if now.Sub(t.Seen)>12*time.Second{delete(s.tabs,id);delete(s.hidden,id)}else if !s.hidden[id]&&!t.Suppressed{all=append(all,t)}}
  sort.Slice(all,func(i,j int)bool{return all[i].Seen.After(all[j].Seen)})
  var selected *Tab
  for i:=range all {t:=&all[i];if t.Playing&&(selected==nil||!selected.Playing||t.Activated.After(selected.Activated)){selected=t}}
@@ -157,7 +159,7 @@ func main(){
   s.Lock();defer s.Unlock()
   s.snapshot()
   tabs:=make([]map[string]any,0,len(s.tabs))
-  for _,t:=range s.tabs{tabs=append(tabs,map[string]any{"tabId":t.TabID,"title":t.Title,"playing":t.Playing,"hidden":s.hidden[t.TabID]})}
+  for _,t:=range s.tabs{tabs=append(tabs,map[string]any{"tabId":t.TabID,"title":t.Title,"playing":t.Playing,"hidden":s.hidden[t.TabID],"suppressed":t.Suppressed})}
   sort.Slice(tabs,func(i,j int)bool{return tabs[i]["tabId"].(int)<tabs[j]["tabId"].(int)})
   reply(w,200,map[string]any{"tabs":tabs,"pinnedId":s.pinnedID})
  })
@@ -179,6 +181,29 @@ func main(){
   if _,ok:=s.tabs[p.TabID];!ok{http.Error(w,"Tab not found",404);return}
   if p.Hidden{s.hidden[p.TabID]=true;if s.pinnedID==p.TabID{s.pinnedID=0}}else{delete(s.hidden,p.TabID)}
   s.publish();reply(w,200,map[string]bool{"ok":true,"hidden":p.Hidden})
+ })
+ mux.HandleFunc("/api/control",func(w http.ResponseWriter,r *http.Request){
+  if r.Method!="POST"||!isLocal(r)||r.Header.Get("Origin")!="http://127.0.0.1:38765"||r.Header.Get("X-PinkBunny-Action")!="1"{http.Error(w,"Forbidden",403);return}
+  r.Body=http.MaxBytesReader(w,r.Body,1024);defer r.Body.Close()
+  var request struct{Action string `json:"action"`;TabID int `json:"tabId"`}
+  if json.NewDecoder(r.Body).Decode(&request)!=nil||!validPlayerAction(request.Action){http.Error(w,"Invalid action",400);return}
+  s.Lock();defer s.Unlock()
+  tabID:=request.TabID
+  if tabID==0 {selected:=s.snapshot();for _,t:=range s.tabs{if t.VideoID==selected.VideoID&&t.Title==selected.Title&&selected.Connected&&t.TabID==s.lastID{tabID=t.TabID;break}}}
+  tab,ok:=s.tabs[tabID]
+  if !ok||s.hidden[tabID]||tab.Suppressed {reply(w,409,map[string]string{"error":"No controllable video; play YouTube and choose a visible tab"});return}
+  if len(s.commands)>=10{reply(w,429,map[string]string{"error":"Too many pending commands"});return}
+  s.commands=append(s.commands,PlayerCommand{TabID:tabID,Action:request.Action,Created:time.Now()})
+  reply(w,202,map[string]any{"queued":true,"tabId":tabID})
+ })
+ mux.HandleFunc("/api/commands",func(w http.ResponseWriter,r *http.Request){
+  if r.Method!="GET"||!extensionOrigin(r)||r.Header.Get("X-Bunny-Key")!=key{http.Error(w,"Forbidden",403);return}
+  s.Lock();defer s.Unlock()
+  now:=time.Now()
+  for len(s.commands)>0&&now.Sub(s.commands[0].Created)>15*time.Second{s.commands=s.commands[1:]}
+  if len(s.commands)==0{reply(w,200,map[string]any{"command":nil});return}
+  command:=s.commands[0];s.commands=s.commands[1:]
+  reply(w,200,map[string]any{"command":command})
  })
  mux.HandleFunc("/events",func(w http.ResponseWriter,r *http.Request){
   if r.Method!="GET"{http.Error(w,"Method not allowed",405);return}
