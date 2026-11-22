@@ -138,6 +138,9 @@ func main(){
  mux:=http.NewServeMux()
  registerExtras(mux)
  mux.HandleFunc("/api/theme",makeThemeService().handler)
+ avatar:=newAvatarService()
+ mux.HandleFunc("/api/avatar",avatar.handler)
+ mux.HandleFunc("/api/avatar/info",avatar.handler)
  mux.HandleFunc("/api/pair",func(w http.ResponseWriter,r *http.Request){
   if !isLocal(r){http.Error(w,"Local access only",403);return}
   if r.Method!="GET"{http.Error(w,"Method not allowed",405);return}
