@@ -106,4 +106,29 @@
   finally{if(timer)clearTimeout(timer);if(ws)ws.close();button.disabled=false;}
  };
  load();
+ const controls=doc.createElement('section');
+ controls.className='card';
+ controls.innerHTML=`<strong>⑥ 🎮 유튜브 원격 제어 (1컴·2컴)</strong>
+ <p class="tiny">송출 PC에서 음악 PC의 유튜브를 조절할 수 있어요. 유튜브가 재생 중이고 크롬 확장 프로그램이 연결돼 있어야 합니다. 명령이 전달되기까지 약간의 지연이 있을 수 있어요.</p>
+ <div class="row">
+ <button data-pb-remote="previous">⏮ 이전 곡</button>
+ <button data-pb-remote="toggle">⏯ 재생 / 일시정지</button>
+ <button data-pb-remote="next">다음 곡 ⏭</button>
+ <button data-pb-remote="volumeDown">🔉 음량 -</button>
+ <button data-pb-remote="volumeUp">🔊 음량 +</button>
+ </div><p id="pb-remote-result" class="tiny" role="status"></p>
+ <p class="tiny">팁: 송출 PC의 설정 페이지에서 제어하는 기능이에요. 영상 사이트에서 이전/다음 버튼을 제공하지 않으면 해당 명령은 작동하지 않을 수 있습니다.</p>`;
+ last.parentElement.insertBefore(controls,last);
+ controls.querySelectorAll('[data-pb-remote]').forEach(button=>button.onclick=async()=>{
+   const result=doc.getElementById('pb-remote-result');
+   button.disabled=true;
+   try{
+    const r=await fetch('/api/control',{method:'POST',headers:{'Content-Type':'application/json','X-PinkBunny-Action':'1'},body:JSON.stringify({action:button.dataset.pbRemote})});
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok)throw Error(data.error||'유튜브 연결 상태를 확인해 주세요.');
+    result.textContent='✅ 명령 전달 요청 완료 · 음악 PC에서 적용 여부를 확인해 주세요.';
+   }catch(e){result.textContent='❌ '+e.message;}
+   finally{button.disabled=false;}
+ });
+
 })();
