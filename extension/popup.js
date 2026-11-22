@@ -1,5 +1,13 @@
 const server=document.getElementById('server'),key=document.getElementById('key'),status=document.getElementById('status'),pair=document.getElementById('pair');
-chrome.storage.local.get(['server','key']).then(s=>{server.value=s.server||'127.0.0.1';key.value=s.key||'';});
+chrome.storage.local.get(['server','key']).then(async s=>{
+ server.value=s.server||'127.0.0.1';key.value=s.key||'';
+ if(!s.key){
+  try{
+   const r=await fetch('http://127.0.0.1:38765/api/pair',{signal:AbortSignal.timeout(2000)});
+   if(r.ok){const d=await r.json();await connect('127.0.0.1',d.code);await refreshTabs();}
+  }catch{status.textContent='1컴은 자동 연결 버튼, 2컴은 연결 주소를 사용해 주세요.';}
+ }
+});
 async function connect(host,code){
  if(!/^(?:localhost|(?:\d{1,3}\.){3}\d{1,3})$/.test(host)||!/^[A-F0-9]{8}$/.test(code)){status.textContent='❌ 주소 또는 연결 코드가 올바르지 않습니다.';return;}
  status.textContent='서버 연결 중…';
