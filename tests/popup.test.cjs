@@ -8,22 +8,24 @@ function makeElement(){
  return {value:'0',textContent:'',checked:false,hidden:false,disabled:false,items:[],handlers:{},classList:{add(){}},
  addEventListener(name,fn){this.handlers[name]=fn},replaceChildren(...items){this.items=items},add(item){this.items.push(item)}};
 }
-function initialize(fullPage=false,offline=false,playerReply={ok:true}){
+function initialize(fullPage=false,offline=false,playerReply={ok:true},recovery={}){
  const elements=new Map();
  const get=id=>{if(!elements.has(id))elements.set(id,makeElement());return elements.get(id)};
  const controls=['next','volumeDown'].map(control=>({dataset:{control},handlers:{},addEventListener(name,fn){this.handlers[name]=fn}}));
+ const injected=[];
  const opened=[],sent=[],events=[],requests=[],storage={server:'127.0.0.1',key:'AABBCCDD',hideAds:true,hideShorts:true};
  const yt={id:22,url:'https://www.youtube.com/watch?v=abc12345678',title:'Playlist Song',lastAccessed:200};
  const ext={id:33,url:'chrome-extension://abc/popup.html?mode=full',title:'Pink Bunny Settings',lastAccessed:250};
- const chrome={permissions:{request:async args=>{requests.push(args);return true}},storage:{local:{get:async()=>({...storage}),set:async v=>Object.assign(storage,v)}},
- tabs:{query:async q=>q.active?[fullPage?ext:yt]:[ext,yt],create:async opts=>opened.push(opts),sendMessage:async(id,msg)=>{sent.push({id,msg});return playerReply}},
+ const chrome={scripting:{executeScript:async options=>{injected.push(options);if(recovery.denyInjection)throw Error('Cannot access contents of the page');return [{frameId:0}]}},
+ permissions:{request:async args=>{requests.push(args);return true}},storage:{local:{get:async()=>({...storage}),set:async v=>Object.assign(storage,v)}},
+ tabs:{query:async q=>q.active?[fullPage?ext:yt]:[ext,yt],create:async opts=>opened.push(opts),sendMessage:async(id,msg)=>{sent.push({id,msg});if(recovery.missingReceiver&&sent.length===1)throw Error('Could not establish connection. Receiving end does not exist.');return playerReply}},
  runtime:{getURL:path=>'chrome-extension://abc/'+path}};
  const document={body:{classList:{add(name){events.push(name)}}},getElementById:get,
  querySelectorAll(selector){return selector==='[data-control]'?controls:[]}};
  const ctx={URL,URLSearchParams,AbortSignal,document,location:{search:fullPage?'?mode=full':''},chrome,Option:class {constructor(text,value){this.text=text;this.value=value}},
  fetch:async()=>{if(offline)throw Error('Offline');return {ok:true,json:async()=>({tabs:[{tabId:22,title:'Playlist Song',playing:true,hidden:false}],pinnedId:0})}}};
  vm.runInNewContext(script,ctx,{timeout:2000});
- return {get,opened,sent,storage,ctx,events,requests,controls};
+ return {get,opened,sent,storage,ctx,events,requests,controls,injected};
 }
 async function flush(){for(let i=0;i<8;i++)await new Promise(resolve=>setImmediate(resolve))}
 
@@ -100,4 +102,33 @@ test('full-page settings uses the selected YouTube tab, not the settings page',a
  await flush();
  assert.equal(x.sent.at(-1).id,22);
  assert.match(x.get('controlStatus').textContent,/버튼을 눌렀어요/);
+});
+
+test('missing YouTube content receiver is automatically injected and media command is retried once',async()=>{
+ const x=initialize(false,false,{ok:true,volumePercent:40,muted:false},{missingReceiver:true});
+ await flush();
+ await x.controls.find(b=>b.dataset.control==='volumeDown').handlers.click();
+ await flush();
+ assert.equal(x.sent.length,2);
+ assert.equal(x.injected.length,1);
+ assert.equal(x.injected[0].target.tabId,22);
+ assert.equal(x.injected[0].files[0],'content.js');
+ assert.match(x.get('controlStatus').textContent,/유튜브 영상 음량: 40%/);
+});
+test('missing receiver with denied site access shows actionable Chrome permission instructions',async()=>{
+ const x=initialize(false,false,{ok:true},{missingReceiver:true,denyInjection:true});
+ await flush();
+ await x.controls.find(b=>b.dataset.control==='next').handlers.click();
+ await flush();
+ assert.equal(x.injected.length,1);
+ assert.equal(x.sent.length,1);
+ assert.match(x.get('controlStatus').textContent,/사이트 액세스/);
+});
+test('working control receiver does not trigger duplicate dynamic injection',async()=>{
+ const x=initialize(false,false,{ok:true});
+ await flush();
+ await x.controls.find(b=>b.dataset.control==='next').handlers.click();
+ await flush();
+ assert.equal(x.injected.length,0);
+ assert.equal(x.sent.length,1);
 });
