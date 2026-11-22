@@ -3,20 +3,21 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 
-function boot(command=null,playerOutcome={ok:true}){
- const hooks={},requested=[],badge=[];
+function boot(command=null,playerOutcome={ok:true},options={}){
+ const hooks={},requested=[],badge=[],injected=[],sentMessages=[];
  const chrome={
+  scripting:{executeScript:async d=>{injected.push(d);return [{frameId:0}]}},
   storage:{local:{get:async()=>({server:'127.0.0.1',key:'A'.repeat(32)})}},
   action:{setBadgeText:arg=>badge.push(arg.text),setBadgeBackgroundColor:()=>{}},
   runtime:{onMessage:{addListener:fn=>{hooks.message=fn}}},
   tabs:{onRemoved:{addListener:fn=>hooks.removed=fn},
         onUpdated:{addListener:fn=>hooks.updated=fn},
         get:async id=>({id,url:'https://www.youtube.com/watch?v=abc12345678'}),
-        sendMessage:async()=>playerOutcome}
+        sendMessage:async(tabId,message)=>{sentMessages.push({tabId,message});if(options.missingReceiver&&sentMessages.length===1)throw Error('Could not establish connection. Receiving end does not exist.');return playerOutcome}}
  };
  const ctx={chrome,URL,AbortSignal,Date,fetch:async (url,options)=>{requested.push({url,options});return {ok:true,json:async()=>({command:url.endsWith('/api/commands')?command:null})}}};
  vm.runInNewContext(fs.readFileSync('extension/background.js','utf8'),ctx,{timeout:1000});
- return {ctx,hooks,requested,badge};
+ return {ctx,hooks,requested,badge,injected,sentMessages};
 }
 
 test('background rejects public IPs and malformed hosts',()=>{
@@ -59,4 +60,17 @@ test('remote command reports YouTube content-script failure instead of silently 
  const body=JSON.parse(report.options.body);
  assert.equal(body.ok,false);
  assert.match(body.error,/Playlist transport/);
+});
+
+test('remote 2-PC control recovers from missing script receiver and acknowledges success',async()=>{
+ const command={id:'c'.repeat(24),tabId:22,action:'volumeUp'};
+ const m=boot(command,{ok:true},{missingReceiver:true});
+ await m.ctx.pollControls('127.0.0.1','A'.repeat(32));
+ assert.equal(m.injected.length,1);
+ assert.equal(m.injected[0].target.tabId,22);
+ assert.equal(m.injected[0].files[0],'content.js');
+ assert.equal(m.sentMessages.length,2);
+ const report=m.requested.find(r=>r.url.endsWith('/api/command-result'));
+ assert.ok(report,'No remote acknowledgement');
+ assert.equal(JSON.parse(report.options.body).ok,true);
 });
