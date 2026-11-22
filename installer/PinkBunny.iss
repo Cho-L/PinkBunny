@@ -12,7 +12,7 @@ DefaultDirName={localappdata}\Programs\PinkBunny
 DisableDirPage=yes
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
-OutputDir=dist
+OutputDir=..\dist
 OutputBaseFilename=PinkBunny-Setup
 Compression=lzma
 SolidCompression=yes
@@ -29,9 +29,9 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "바탕화면에 Pink Bunny 바로가기 만들기"; GroupDescription: "추가 옵션:"; Flags: unchecked
 
 [Files]
-Source: "PinkBunny.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\PinkBunny.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "extension\*"; DestDir: "{app}\extension"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "INSTALL_KO.txt"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\INSTALL_KO.txt"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\Pink Bunny"; Filename: "{app}\{#MyAppExeName}"
