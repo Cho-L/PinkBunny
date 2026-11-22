@@ -8,7 +8,7 @@ import (
 func TestSnapshotPinnedTabAndTimeline(t *testing.T) {
  now:=time.Now()
  s:=&Store{tabs:map[int]Tab{
-  1:{Update:Update{TabID:1,Title:"First",Playing:true,Position:30,Duration:100},Seen:now,Activated:now.Add(-time.Second)},
+  1:{Update:Update{TabID:1,Title:"First",Playing:true,Position:30,Duration:100,NextTitle:"Next 1",NextChannel:"Channel One"},Seen:now,Activated:now.Add(-time.Second)},
   2:{Update:Update{TabID:2,Title:"Second",Playing:true,Position:42,Duration:80,NextTitle:"Next 2"},Seen:now,Activated:now},
  },listeners:map[chan Status]struct{}{}}
  st:=s.snapshot()
