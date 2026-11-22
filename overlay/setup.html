@@ -12,7 +12,7 @@ main{max-width:730px;margin:auto;background:#ffffffeb;padding:28px;border-radius
 <a id="quickImageLink" href="/guide-quickstart-1pc.svg" target="_blank" rel="noopener" title="그림을 확대해서 보기"><img id="quickImage" class="guide-img" src="/guide-quickstart-1pc.svg" alt="송출 PC에서 유튜브 음악을 재생할 때의 설치 순서"/></a>
 <p class="tiny">그림을 누르면 크게 볼 수 있어요. 2컴 방송이어도 송출 PC에서 음악을 재생하면 왼쪽 버튼을 선택하세요.</p>
 <div class="guide-links">
-<a href="/guide" target="_blank" rel="noopener">📘 전체 이미지 설치 가이드</a>
+<a href="/guide#install" target="_blank" rel="noopener">📘 그림 설치 안내</a><a href="/guide#features" target="_blank" rel="noopener">✨ 기능 사용 그림 7장</a>
 <a href="/guide-chrome-extension.svg" target="_blank" rel="noopener">🌐 Chrome 등록 그림</a>
 <a href="/guide-obs-source.svg" target="_blank" rel="noopener">🎥 OBS 설정 그림</a>
 </div></section>
@@ -23,6 +23,7 @@ main{max-width:730px;margin:auto;background:#ffffffeb;padding:28px;border-radius
 <div id="dual" hidden><p>송출 PC의 IP를 선택한 뒤 아래 <strong>연결 주소 복사</strong> 버튼을 누르세요. 복사한 링크를 메신저 등으로 음악 PC로 전달한 뒤, <strong>음악 PC의 크롬 확장 프로그램 설정에 붙여넣으면 끝</strong>이에요.</p><label>송출 PC 네트워크 주소 <select id="ip"></select></label><p id="pairlink"></p><button id="copyPair">연결 주소 복사</button><small>연결 주소에는 개인 연결 코드가 포함됩니다. 공개 게시글이나 불특정 다수에게 공유하지 마세요. 두 PC는 같은 사설 네트워크를 사용해야 합니다.</small></div>
 </div><div class="card"><strong>③ OBS 브라우저 소스 추가</strong><p>OBS → 소스 추가 → 브라우저 → URL에 아래 주소 붙여넣기 · 크기 <strong>420 × 130</strong></p><div class="row"><code>http://127.0.0.1:38765</code><button data-copy="http://127.0.0.1:38765">OBS 주소 복사</button></div></div>
 <div class="card"><strong>④ 유튜브 음악 재생</strong><p>음악 PC에서 유튜브 페이지를 새로고침하고 영상을 재생하세요. 송출 PC의 OBS에 제목이 표시됩니다.</p></div>
+<section class="card" id="featureHowto"><strong>⑤ 설치 완료 후 기능 사용하기</strong><p>유튜브 탭 고정·숨김, 스마트 필터, 재생 제어, 캐릭터 디자인, 2컴 원격 제어까지 <strong>그림으로 따라 해 보세요.</strong></p><div class="guide-links"><a href="/guide#features" target="_blank" rel="noopener">📘 전체 기능 그림 가이드</a><a href="/guide#feature-tabs" target="_blank" rel="noopener">📌 탭 고정·숨김</a><a href="/guide#feature-design" target="_blank" rel="noopener">🎨 캐릭터 꾸미기</a><a href="/guide#feature-troubleshooting" target="_blank" rel="noopener">🛠 문제 해결</a></div></section>
 <p class="tiny" id="message">연결 정보를 확인하는 중…</p><small>⚠ Pink Bunny 종료는 Windows 트레이 메뉴에서 할 수 있어요. Windows 방화벽에서 허용을 묻는 경우 신뢰할 수 있는 개인 네트워크만 허용하세요. 포트포워딩은 필요하지 않습니다.</small>
 </main><script>
 let info;
