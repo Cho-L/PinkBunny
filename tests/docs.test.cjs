@@ -94,3 +94,13 @@ test('GitHub public guide links open rendered Markdown gallery rather than raw H
     assert.ok(fs.existsSync(path), 'Missing illustration '+path);
   }
 });
+
+test('extension default HTTP permission is loopback-only; 2-PC host access is opt-in',()=>{
+ const manifest=JSON.parse(read('extension/manifest.json'));
+ assert.ok(!manifest.host_permissions.includes('http://*/*'), 'must not request all HTTP hosts at installation');
+ assert.ok(manifest.host_permissions.includes('http://127.0.0.1/*'));
+ assert.ok(manifest.optional_host_permissions.includes('http://*/*'));
+ const popup=read('extension/popup.js');
+ assert.match(popup,/chrome\.permissions\.request/);
+ assert.match(popup,/A-F0-9\]\{32\}/);
+});
