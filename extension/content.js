@@ -9,6 +9,32 @@
     document.title.replace(/\s*-\s*YouTube(?: Music)?\s*$/,'')||'').trim();
   const channel=()=> (document.querySelector('ytmusic-player-bar .byline')?.textContent||
     document.querySelector('ytd-watch-metadata #owner #channel-name a')?.textContent||'').trim();
+
+  // Only use the actual visible playlist/queue. Never claim that YouTube's
+  // "recommended" videos are a guaranteed next track.
+  function queueInfo(){
+    let nodes=[],active=-1;
+    if(location.hostname==='music.youtube.com'){
+      nodes=[...document.querySelectorAll('ytmusic-player-queue ytmusic-player-queue-item')];
+      active=nodes.findIndex(n=>n.hasAttribute('selected')||n.getAttribute('aria-selected')==='true'||n.classList.contains('selected'));
+    }else{
+      const panel=document.querySelector('ytd-playlist-panel-renderer');
+      if(panel){
+        nodes=[...panel.querySelectorAll('ytd-playlist-panel-video-renderer')];
+        active=nodes.findIndex(n=>n.hasAttribute('selected')||n.getAttribute('aria-selected')==='true'||n.classList.contains('selected'));
+      }
+    }
+    const label=n=>(
+      n?.querySelector('#video-title, .song-title, yt-formatted-string.title, .title')?.getAttribute('title')||
+      n?.querySelector('#video-title, .song-title, yt-formatted-string.title, .title')?.textContent||''
+    ).replace(/\\s+/g,' ').trim().slice(0,180);
+    const byline=n=>(
+      n?.querySelector('#byline, .byline, .subtitle, #metadata')?.textContent||''
+    ).replace(/\\s+/g,' ').trim().slice(0,90);
+    if(active<0||active+1>=nodes.length)return {nextTitle:'',nextChannel:''};
+    const next=nodes[active+1];
+    return {nextTitle:label(next),nextChannel:byline(next)};
+  }
   function read(){
     const url=new URL(location.href);
     if(!(url.pathname==='/watch'||url.pathname.startsWith('/shorts/')||location.hostname==='music.youtube.com'))return;
@@ -16,7 +42,8 @@
     if(!video||!title())return;
     const duration=Number.isFinite(video.duration)&&video.duration>0?video.duration:0;
     const position=Number.isFinite(video.currentTime)?Math.max(0,video.currentTime):0;
-    const data={title:title(),channel:channel(),url:url.href,
+    const upcoming=queueInfo();
+    const data={title:title(),channel:channel(),url:url.href,...upcoming,
       videoId:url.searchParams.get('v')||(url.pathname.startsWith('/shorts/')?url.pathname.split('/')[2]:''),
       playing:!video.paused&&!video.ended&&video.readyState>=2,
       suppressed:(filters.hideShorts&&url.pathname.startsWith('/shorts/'))||(filters.hideAds&&!!document.querySelector('.html5-video-player.ad-showing, #movie_player.ad-showing')),
