@@ -6,6 +6,11 @@ if(fullPage){
 }else{
  document.getElementById('openDashboard').addEventListener('click',()=>chrome.tabs.create({url:chrome.runtime.getURL('popup.html?mode=full')}));
 }
+function validHost(host){
+ if(host==='localhost')return true;
+ const parts=host.split('.');
+ return parts.length===4&&parts.every(part=>/^\\d{1,3}$/.test(part)&&Number(part)>=0&&Number(part)<=255);
+}
 const server=document.getElementById('server'),key=document.getElementById('key'),status=document.getElementById('status'),pair=document.getElementById('pair');
 chrome.storage.local.get(['server','key']).then(async s=>{
  server.value=s.server||'127.0.0.1';key.value=s.key||'';
@@ -17,7 +22,7 @@ chrome.storage.local.get(['server','key']).then(async s=>{
  }
 });
 async function connect(host,code){
- if(!/^(?:localhost|(?:\d{1,3}\.){3}\d{1,3})$/.test(host)||!/^[A-F0-9]{8}$/.test(code)){status.textContent='❌ 주소 또는 연결 코드가 올바르지 않습니다.';return;}
+ if(!validHost(host)||!/^[A-F0-9]{8}$/.test(code)){status.textContent='❌ 주소 또는 연결 코드가 올바르지 않습니다.';return false;}
  status.textContent='서버 연결 중…';
  try{
   const result=await fetch('http://'+host+':38765/api/tabs',{headers:{'X-Bunny-Key':code,'X-Bunny-Extension':'1'},signal:AbortSignal.timeout(4000)});
@@ -25,7 +30,8 @@ async function connect(host,code){
   await chrome.storage.local.set({server:host,key:code});
   server.value=host;key.value=code;status.textContent='✅ 연결됐어요! 유튜브 탭을 새로고침하고 음악을 틀어 주세요.';
   await refreshTabs();await refreshCurrentTab();
- }catch{status.textContent='❌ 연결되지 않았어요. PinkBunny.exe가 켜져 있는지, 주소·방화벽이 맞는지 확인하세요.';}
+  return true;
+ }catch{status.textContent='❌ 연결되지 않았어요. PinkBunny.exe가 켜져 있는지, 주소·방화벽이 맞는지 확인하세요.';return false;}
 }
 document.getElementById('auto').onclick=async()=>{
  status.textContent='내 PC에서 Pink Bunny 찾는 중…';
@@ -42,8 +48,7 @@ document.getElementById('apply').onclick=async()=>{
   if(u.protocol!=='pinkbunny:'||u.hostname!=='pair')throw Error();
   const host=u.searchParams.get('host')||'',code=(u.searchParams.get('key')||'').toUpperCase();
   if(u.searchParams.get('port')!=='38765')throw Error();
-  await connect(host,code);
-  pair.value='';
+  if(await connect(host,code))pair.value='';
  }catch{status.textContent='❌ 올바른 연결 주소가 아니에요. 송출 PC 설치 도우미에서 복사해 주세요.';}
 };
 document.getElementById('save').onclick=()=>connect(server.value.trim(),key.value.trim().toUpperCase());
