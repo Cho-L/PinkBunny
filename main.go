@@ -52,13 +52,14 @@ type Store struct {
  tabs map[int]Tab
  lastID int
  pinnedID int
+ hidden map[int]bool
  listeners map[chan Status]struct{}
  lastJSON string
 }
 func (s *Store) snapshot() Status {
  now:=time.Now()
  all:=make([]Tab,0,len(s.tabs))
- for id,t:=range s.tabs {if now.Sub(t.Seen)>12*time.Second{delete(s.tabs,id)}else{all=append(all,t)}}
+ for id,t:=range s.tabs {if now.Sub(t.Seen)>12*time.Second{delete(s.tabs,id);delete(s.hidden,id)}else if !s.hidden[id]{all=append(all,t)}}
  sort.Slice(all,func(i,j int)bool{return all[i].Seen.After(all[j].Seen)})
  var selected *Tab
  for i:=range all {t:=&all[i];if t.Playing&&(selected==nil||!selected.Playing||t.Activated.After(selected.Activated)){selected=t}}
@@ -92,7 +93,7 @@ func update(w http.ResponseWriter,r *http.Request,s *Store,remove bool,key strin
  var p Update
  if json.NewDecoder(r.Body).Decode(&p)!=nil||p.TabID<0{reply(w,400,map[string]string{"error":"Bad payload"});return}
  s.Lock();defer s.Unlock()
- if remove{delete(s.tabs,p.TabID)}else{
+ if remove{delete(s.tabs,p.TabID);delete(s.hidden,p.TabID);if s.pinnedID==p.TabID{s.pinnedID=0}}else{
   u,e:=url.Parse(p.URL)
   if e!=nil||u.Scheme!="https"||!(u.Hostname()=="www.youtube.com"||u.Hostname()=="music.youtube.com"||u.Hostname()=="youtube.com"){reply(w,400,map[string]string{"error":"Not YouTube"});return}
   p.Title=clip(p.Title,220);if p.Title==""{reply(w,400,map[string]string{"error":"Empty title"});return}
@@ -131,7 +132,7 @@ func openBrowser(address string) {
 }
 func main(){
  key,err:=loadPairingKey();if err!=nil{log.Fatal("Pairing configuration: ",err)}
- s:=&Store{tabs:map[int]Tab{},listeners:map[chan Status]struct{}{}}
+ s:=&Store{tabs:map[int]Tab{},hidden:map[int]bool{},listeners:map[chan Status]struct{}{}}
  mux:=http.NewServeMux()
  registerExtras(mux)
  mux.HandleFunc("/api/theme",makeThemeService().handler)
@@ -156,7 +157,7 @@ func main(){
   s.Lock();defer s.Unlock()
   s.snapshot()
   tabs:=make([]map[string]any,0,len(s.tabs))
-  for _,t:=range s.tabs{tabs=append(tabs,map[string]any{"tabId":t.TabID,"title":t.Title,"playing":t.Playing})}
+  for _,t:=range s.tabs{tabs=append(tabs,map[string]any{"tabId":t.TabID,"title":t.Title,"playing":t.Playing,"hidden":s.hidden[t.TabID]})}
   sort.Slice(tabs,func(i,j int)bool{return tabs[i]["tabId"].(int)<tabs[j]["tabId"].(int)})
   reply(w,200,map[string]any{"tabs":tabs,"pinnedId":s.pinnedID})
  })
@@ -166,8 +167,18 @@ func main(){
   var p struct{TabID int `json:"tabId"`}
   if json.NewDecoder(r.Body).Decode(&p)!=nil||p.TabID<0 {http.Error(w,"Invalid tab",400);return}
   s.Lock();defer s.Unlock()
-  if p.TabID>0 {if _,ok:=s.tabs[p.TabID];!ok{http.Error(w,"Tab not found",404);return}}
+  if p.TabID>0 {if _,ok:=s.tabs[p.TabID];!ok||s.hidden[p.TabID]{http.Error(w,"Tab not found or hidden",404);return}}
   s.pinnedID=p.TabID;s.publish();reply(w,200,map[string]bool{"ok":true})
+ })
+ mux.HandleFunc("/api/visibility",func(w http.ResponseWriter,r *http.Request){
+  if r.Method!="POST"||!extensionOrigin(r)||r.Header.Get("X-Bunny-Key")!=key{http.Error(w,"Forbidden",403);return}
+  r.Body=http.MaxBytesReader(w,r.Body,1024)
+  var p struct{TabID int `json:"tabId"`; Hidden bool `json:"hidden"`}
+  if json.NewDecoder(r.Body).Decode(&p)!=nil||p.TabID<=0{http.Error(w,"Invalid tab",400);return}
+  s.Lock();defer s.Unlock()
+  if _,ok:=s.tabs[p.TabID];!ok{http.Error(w,"Tab not found",404);return}
+  if p.Hidden{s.hidden[p.TabID]=true;if s.pinnedID==p.TabID{s.pinnedID=0}}else{delete(s.hidden,p.TabID)}
+  s.publish();reply(w,200,map[string]bool{"ok":true,"hidden":p.Hidden})
  })
  mux.HandleFunc("/events",func(w http.ResponseWriter,r *http.Request){
   if r.Method!="GET"{http.Error(w,"Method not allowed",405);return}
