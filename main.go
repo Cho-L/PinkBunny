@@ -234,18 +234,7 @@ func main(){
   switch{case strings.HasSuffix(name,".html"):w.Header().Set("Content-Type","text/html; charset=utf-8");case strings.HasSuffix(name,".js"):w.Header().Set("Content-Type","application/javascript");case strings.HasSuffix(name,".css"):w.Header().Set("Content-Type","text/css");case strings.HasSuffix(name,".svg"):w.Header().Set("Content-Type","image/svg+xml")}
   w.Header().Set("Cache-Control","no-store");w.Header().Set("X-Content-Type-Options","nosniff");_,_=w.Write(bytes)
  })
- handler:=http.HandlerFunc(func(w http.ResponseWriter,r *http.Request){
-  // Reject DNS-rebound hosts and never expose player status/artwork/OBS UI
-  // beyond the streaming PC. The 2-PC extension uses paired API endpoints.
-  if !permittedClient(r){http.Error(w,"Local access or paired extension required",403);return}
-  if origin:=r.Header.Get("Origin");extensionOrigin(r)&&strings.HasPrefix(origin,"chrome-extension://")&&
-   (remoteExtensionEndpoint(r.URL.Path)||r.URL.Path=="/api/pair"){
-   w.Header().Set("Access-Control-Allow-Origin",origin);w.Header().Set("Vary","Origin")
-   w.Header().Set("Access-Control-Allow-Headers","Content-Type, X-Bunny-Key, X-Bunny-Extension")
-   w.Header().Set("Access-Control-Allow-Methods","GET, POST, OPTIONS")
-  }
-  if r.Method=="OPTIONS"{w.WriteHeader(204);return};mux.ServeHTTP(w,r)
- })
+ handler:=secureHandler(mux)
  ln,err:=net.Listen("tcp","0.0.0.0:38765")
  if err!=nil{fmt.Fprintln(os.Stderr,"Port 38765 is in use:",err);openBrowser("http://127.0.0.1:38765/setup");return}
  fmt.Println("🐰 Pink Bunny | OBS: http://127.0.0.1:38765")
