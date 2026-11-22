@@ -6,7 +6,7 @@ Pink Bunny는 Chrome에서 재생하는 **YouTube / YouTube Music 영상의 제�
 
 ![송출 PC에서 음악을 재생할 때 Pink Bunny 설치 순서](overlay/guide-quickstart-1pc.svg)
 
-**[📥 최신 Windows 설치 파일 다운로드](https://github.com/Cho-L/PinkBunny/releases/tag/beta)** · [📘 설치 그림 4종](#-그림으로-따라-하는-설치) · [📰 게시글용 소개](POST_KO.md)
+**[📥 최신 Windows 설치 파일 다운로드](https://github.com/Cho-L/PinkBunny/releases/tag/beta)** · [📘 그림 설치 안내](overlay/guide-quickstart-1pc.svg) · [📰 게시글용 소개](POST_KO.md)
 
 ## 🎵 핵심 기능
 
