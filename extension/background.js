@@ -1,3 +1,11 @@
+// Only communicate with loopback or RFC1918 private streaming-PC addresses.
+function validServerHost(host){
+ if(host==='localhost'||host==='127.0.0.1')return true;
+ const parts=host.split('.');
+ if(parts.length!==4||!parts.every(p=>/^\d{1,3}$/.test(p)&&Number(p)<=255))return false;
+ const [a,b]=parts.map(Number);
+ return a===10||(a===172&&b>=16&&b<=31)||(a===192&&b===168);
+}
 let polling=false,lastPoll=0;
 async function pollControls(host,key){
  if(polling||Date.now()-lastPoll<900)return;
@@ -21,7 +29,7 @@ async function send(type,payload){
  const settings=await chrome.storage.local.get(['server','key']);
  const host=(settings.server||'127.0.0.1').trim(), key=(settings.key||'').trim().toUpperCase();
  if(!key){chrome.action.setBadgeText({text:'SET'});return;}
- if(!/^(?:localhost|(?:\d{1,3}\.){3}\d{1,3})$/.test(host))return;
+ if(!validServerHost(host))return;
  try{
   const response=await fetch(`http://${host}:38765/api/${type}`,{
    method:'POST',headers:{'Content-Type':'application/json','X-Bunny-Key':key,'X-Bunny-Extension':'1'},body:JSON.stringify(payload)
