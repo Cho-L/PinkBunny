@@ -19,4 +19,4 @@ mode.onchange=()=>{dual.hidden=mode.value!=='two';single.hidden=mode.value!=='on
 async function copy(t){try{await navigator.clipboard.writeText(t);document.getElementById('message').textContent='✅ 복사했습니다.';}catch{document.getElementById('message').textContent='복사가 차단되면 텍스트를 직접 복사해 주세요.';}}
 document.querySelectorAll('[data-copy]').forEach(el=>el.onclick=()=>copy(el.dataset.copy));document.getElementById('copyPair').onclick=()=>copy(document.getElementById('pairlink').textContent);
 fetch('/api/pair').then(r=>r.json()).then(d=>{info=d;if(!d.ips?.length){document.getElementById('message').textContent='사용 가능한 사설 IPv4 주소를 찾지 못했습니다. 2컴은 네트워크 연결을 확인하세요.';return;}ip.innerHTML='';d.ips.forEach(value=>{const opt=document.createElement('option');opt.value=value;opt.textContent=value;ip.appendChild(opt)});setLink();document.getElementById('message').textContent='✅ 설치 도우미가 준비됐습니다.';}).catch(()=>{document.getElementById('message').textContent='❌ 서버와 연결할 수 없습니다.'});
-</script><script src="/setup-extra.js"></script></body></html>
+</script><script src="/setup-extra.js"></script><script src="/theme-settings.js"></script></body></html>
