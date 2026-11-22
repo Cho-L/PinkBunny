@@ -15,13 +15,15 @@ type Theme struct {
  Scale int `json:"scale"`
  Animate bool `json:"animate"`
  ShowCover bool `json:"showCover"`
+ Layout string `json:"layout"`
 }
 type themeService struct {sync.RWMutex; value Theme; file string}
-func defaultTheme()Theme{return Theme{Color:"pink",Opacity:78,Scale:100,Animate:true,ShowCover:true}}
+func defaultTheme()Theme{return Theme{Color:"pink",Opacity:78,Scale:100,Animate:true,ShowCover:true,Layout:"classic"}}
 func validateTheme(t Theme)error{
  switch t.Color {case "pink","purple","mint","peach":default:return errors.New("invalid color")}
  if t.Opacity<20||t.Opacity>100 {return errors.New("opacity must be 20-100")}
  if t.Scale<75||t.Scale>100 {return errors.New("scale must be 75-100")}
+ switch t.Layout {case "", "classic","compact","cover":default:return errors.New("invalid layout")}
  return nil
 }
 func makeThemeService()*themeService{
@@ -32,7 +34,7 @@ func makeThemeService()*themeService{
  b,e:=os.ReadFile(t.file)
  if e==nil{
   var settings Theme
-  if json.Unmarshal(b,&settings)==nil && validateTheme(settings)==nil {t.value=settings}
+  if json.Unmarshal(b,&settings)==nil && validateTheme(settings)==nil {if settings.Layout==""{settings.Layout="classic"};t.value=settings}
  }
  return t
 }
@@ -50,6 +52,7 @@ func (t *themeService) handler(w http.ResponseWriter,r *http.Request){
  dec:=json.NewDecoder(r.Body);dec.DisallowUnknownFields()
  var v Theme
  if dec.Decode(&v)!=nil||validateTheme(v)!=nil{reply(w,400,map[string]string{"error":"Invalid theme settings"});return}
+ if v.Layout==""{v.Layout="classic"}
  t.Lock();defer t.Unlock()
  if t.file!="" {
   dir:=filepath.Dir(t.file)
