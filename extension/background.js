@@ -1,3 +1,18 @@
+let polling=false,lastPoll=0;
+async function pollControls(host,key){
+ if(polling||Date.now()-lastPoll<900)return;
+ polling=true;lastPoll=Date.now();
+ try{
+  const r=await fetch(`http://${host}:38765/api/commands`,{headers:{'X-Bunny-Key':key,'X-Bunny-Extension':'1'},signal:AbortSignal.timeout(3500)});
+  if(!r.ok)return;
+  const data=await r.json();
+  if(!data.command)return;
+  const command=data.command;
+  const tab=await chrome.tabs.get(command.tabId).catch(()=>null);
+  if(!tab||!/^https:\\/\\/(www\\.youtube\\.com|music\\.youtube\\.com)\\//.test(tab.url||''))return;
+  await chrome.tabs.sendMessage(command.tabId,{type:'pinkbunny-player-command',action:command.action}).catch(()=>{});
+ }catch{}finally{polling=false;}
+}
 async function send(type,payload){
  const settings=await chrome.storage.local.get(['server','key']);
  const host=(settings.server||'127.0.0.1').trim(), key=(settings.key||'').trim().toUpperCase();
@@ -9,6 +24,7 @@ async function send(type,payload){
   });
   chrome.action.setBadgeText({text:response.ok?'ON':'!'});
   chrome.action.setBadgeBackgroundColor({color:response.ok?'#E681AF':'#D14F55'});
+  if(response.ok)pollControls(host,key);
  }catch{chrome.action.setBadgeText({text:'OFF'});chrome.action.setBadgeBackgroundColor({color:'#999999'});}
 }
 chrome.runtime.onMessage.addListener((message,sender)=>{
@@ -18,3 +34,5 @@ chrome.runtime.onMessage.addListener((message,sender)=>{
 });
 chrome.tabs.onRemoved.addListener(tabId=>send('remove',{tabId}));
 chrome.tabs.onUpdated.addListener((tabId,changeInfo)=>{if(changeInfo.url&&!/^https:\/\/(www\.youtube\.com|music\.youtube\.com)\//.test(changeInfo.url))send('remove',{tabId});});
+// The content script already reports media activity every ~850ms, keeping
+// remote commands responsive without an always-running extension worker.
