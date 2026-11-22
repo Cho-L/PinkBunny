@@ -1,4 +1,8 @@
 (() => {
+  // Declarative + recovery injection must not register duplicate listeners
+  // or multiple media polling loops in the same document.
+  if(globalThis.__pinkBunnyContentAttached)return;
+  globalThis.__pinkBunnyContentAttached=true;
   let last='',sent=0;
   let filters={hideAds:true,hideShorts:true};
   chrome.storage.local.get(['hideAds','hideShorts']).then(v=>{filters.hideAds=v.hideAds!==false;filters.hideShorts=v.hideShorts!==false;last='';});
