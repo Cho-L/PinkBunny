@@ -1,8 +1,30 @@
-const player=document.getElementById('player'),title=document.getElementById('title'),channel=document.getElementById('channel'),icon=document.getElementById('stateIcon'),frame=title.parentElement;let previous='';
-function render(d){const connected=!!d?.connected,playing=!!d?.playing;player.classList.toggle('idle',!connected);player.classList.toggle('paused',connected&&!playing);icon.textContent=!connected?'♡':playing?'♫':'Ⅱ';const next=connected?(d.title||'제목 없음'):'유튜브 재생을 기다리는 중…';
- if(next!==previous){previous=next;title.textContent=next;title.classList.remove('scroll');requestAnimationFrame(()=>{const overflow=title.scrollWidth-frame.clientWidth;if(overflow>8){title.style.setProperty('--view',frame.clientWidth+'px');title.style.setProperty('--duration',Math.max(9,Math.ceil(overflow/24)+6)+'s');title.classList.add('scroll');}})}
- channel.textContent=connected?(d.channel||'YouTube'):'Pink Bunny Player';
+const player=document.getElementById('player'),title=document.getElementById('title'),channel=document.getElementById('channel'),icon=document.getElementById('stateIcon'),frame=title.parentElement,progress=document.getElementById('progress'),elapsed=document.getElementById('elapsed'),durationEl=document.getElementById('duration'),cover=document.getElementById('cover');
+let previous='',current=null,lastUpdate=performance.now(),shownVideo='';
+const fmt=s=>{s=Math.max(0,Math.floor(s||0));return Math.floor(s/3600)>0?Math.floor(s/3600)+':'+String(Math.floor(s%3600/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'):Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+function updateClock(){
+  const d=current||{},total=Number(d.duration)||0;
+  const extrapolated=(Number(d.position)||0)+(d.playing?(performance.now()-lastUpdate)/1000:0);
+  const pos=total>0?Math.min(total,extrapolated):extrapolated;
+  progress.style.width=total>0?Math.max(0,Math.min(100,pos/total*100))+'%':'0%';
+  elapsed.textContent=fmt(pos);durationEl.textContent=total>0?fmt(total):'LIVE';
+}
+function render(d){
+  current=d;lastUpdate=performance.now();
+  const connected=!!d?.connected,playing=!!d?.playing;
+  player.classList.toggle('idle',!connected);player.classList.toggle('paused',connected&&!playing);
+  icon.textContent=!connected?'♡':playing?'♫':'Ⅱ';
+  const next=connected?(d.title||'제목 없음'):'유튜브 재생을 기다리는 중…';
+  if(next!==previous){previous=next;title.textContent=next;title.classList.remove('scroll');
+    requestAnimationFrame(()=>{const overflow=title.scrollWidth-frame.clientWidth;if(overflow>8){title.style.setProperty('--view',frame.clientWidth+'px');title.style.setProperty('--duration',Math.max(9,Math.ceil(overflow/24)+6)+'s');title.classList.add('scroll')}})}
+  channel.textContent=connected?(d.channel||'YouTube'):'Pink Bunny Player';
+  const vid=/^[A-Za-z0-9_-]{11}$/.test(d?.videoId||'')?d.videoId:'';
+  if(vid!==shownVideo){shownVideo=vid;cover.removeAttribute('src');cover.style.display=vid?'block':'none';
+    if(vid)cover.src='https://i.ytimg.com/vi/'+vid+'/mqdefault.jpg';
+  }
+  updateClock();
 }
 render({connected:false});
-const es=new EventSource('/events');es.onmessage=e=>{try{render(JSON.parse(e.data))}catch{}};
-if(new URLSearchParams(location.search).has('demo')){es.close();render({connected:true,playing:true,title:'밤양갱 - 비비 (BIBI) | Official Music Video',channel:'BIBI'});}
+const demo=new URLSearchParams(location.search).has('demo');
+if(demo){render({connected:true,playing:true,title:'Pink Bunny · 유튜브 Now Playing 미리보기',channel:'YouTube',position:48,duration:205,videoId:''})}
+else{const es=new EventSource('/events');es.onmessage=e=>{try{render(JSON.parse(e.data))}catch{}}}
+setInterval(updateClock,200);
