@@ -137,3 +137,25 @@ document.getElementById('unpin').onclick=async()=>{
  }catch(e){status.textContent='❌ '+e.message;}
 };
 refreshCurrentTab();
+
+async function executeLocalControl(action){
+ const [tab]=await chrome.tabs.query({active:true,currentWindow:true});
+ if(!isYouTubeTab(tab)){status.textContent='❌ 유튜브 탭에서 확장 프로그램을 열어 주세요.';return;}
+ try{
+  const r=await chrome.tabs.sendMessage(tab.id,{type:'pinkbunny-player-command',action});
+  status.textContent=r?.ok?'✅ 명령을 유튜브에 전달했어요.':'❌ '+(r?.error||'이 탭에서 제어할 수 없어요. 새로고침해 주세요.');
+ }catch{status.textContent='❌ 유튜브 탭을 새로고침하고 다시 시도해 주세요.';}
+}
+for(const button of document.querySelectorAll('[data-control]')){
+ button.addEventListener('click',()=>executeLocalControl(button.dataset.control));
+}
+chrome.storage.local.get(['hideAds','hideShorts']).then(v=>{
+ document.getElementById('filterAds').checked=v.hideAds!==false;
+ document.getElementById('filterShorts').checked=v.hideShorts!==false;
+});
+for(const [id,key] of [['filterAds','hideAds'],['filterShorts','hideShorts']]){
+ document.getElementById(id).addEventListener('change',async e=>{
+  await chrome.storage.local.set({[key]:e.target.checked});
+  status.textContent='✅ 스마트 방송 필터 설정을 저장했어요.';
+ });
+}
