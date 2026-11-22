@@ -1,3 +1,15 @@
+## v11.3.0 security / connection stabilization (2026-11-22)
+
+- **Default pairing:** New installations generate 32 hexadecimal characters (128 bits) with crypto/rand. **Existing 8-character pairing codes remain unchanged** to avoid disconnecting existing two-PC users; these legacy codes are weaker.
+- **LAN isolation:** HTTP middleware rejects remote reads of OBS widget, SSE, current media status, artwork, theme, setup and guide. Remote music PCs may access only paired extension API endpoints.
+- **DNS rebinding:** Rejects non-literal Host names other than localhost, requires port 38765.
+- **Chrome manifest:** Required HTTP host access is limited to loopback; permissions for a 2-PC streaming IP are requested by the user in the extension popup during pairing.
+- **Compatibility:** After upgrading Chrome extension, existing 2-PC setups may need to re-apply the pairing address to grant the specific streaming PC permission. 1-PC auto-connect remains available.
+- **Known limitation:** A hostile program or Chrome extension already installed on the streaming PC may still access local pairing resources. This is not an endpoint authentication system against malware on the same computer.
+- **Verification:** Regression tests cover pairing generation/preservation, local/remote HTTP access policy and extension permission prompts. Passing CI is **not** proof of real multi-PC or Chrome/OBS E2E success.
+
+---
+
 # Pink Bunny QA report — v11.0.1 (2026-11-22)
 
 ## Scope and evidence
