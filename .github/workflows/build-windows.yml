@@ -53,7 +53,15 @@ jobs:
             if ($null -eq $avatar.present) { throw "Avatar info response missing" }
             $setup = (Invoke-WebRequest -Uri "http://127.0.0.1:38765/setup" -TimeoutSec 3).Content
             if (-not $setup.Contains("Pink Bunny")) { throw "Setup wizard unavailable" }
-            Write-Host "QA: executable startup, server, theme, avatar and setup PASS"
+            $guide = (Invoke-WebRequest -Uri "http://127.0.0.1:38765/guide" -TimeoutSec 3).Content
+            if (-not $guide.Contains("guide-quickstart-1pc.svg")) { throw "Illustrated guide unavailable" }
+            foreach ($name in @("guide-quickstart-1pc.svg", "guide-quickstart-2pc.svg", "guide-chrome-extension.svg", "guide-obs-source.svg")) {
+              $picture = Invoke-WebRequest -Uri "http://127.0.0.1:38765/$name" -TimeoutSec 3
+              if ($picture.Headers["Content-Type"] -notmatch "image/svg\\+xml" -or -not $picture.Content.Contains("<svg")) {
+                throw "Visual guide was not served as SVG: $name"
+              }
+            }
+            Write-Host "QA: executable startup, server, setup and illustrated guides PASS"
           } finally {
             Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
           }
@@ -64,6 +72,9 @@ jobs:
           Copy-Item PinkBunny.exe dist/PinkBunny/
           Copy-Item extension/* dist/PinkBunny/extension/
           Copy-Item "INSTALL_KO.txt" dist/PinkBunny/
+          New-Item -ItemType Directory -Force -Path dist/PinkBunny/guide | Out-Null
+          Copy-Item overlay/guide.html dist/PinkBunny/guide/index.html
+          Copy-Item overlay/guide-*.svg dist/PinkBunny/guide/
           Compress-Archive -Path dist/PinkBunny -DestinationPath dist/PinkBunny-Windows.zip -CompressionLevel Optimal -Force
       - name: Install Inno Setup compiler
         shell: pwsh
