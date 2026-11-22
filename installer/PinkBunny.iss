@@ -1,5 +1,5 @@
 #define MyAppName "Pink Bunny"
-#define MyAppVersion "6.0.0"
+#define MyAppVersion "7.0.0"
 #define MyAppPublisher "Pink Bunny"
 #define MyAppExeName "PinkBunny.exe"
 
