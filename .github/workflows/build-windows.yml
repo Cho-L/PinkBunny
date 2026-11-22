@@ -33,6 +33,19 @@ jobs:
           Copy-Item extension/* dist/PinkBunny/extension/
           Copy-Item "INSTALL_KO.txt" dist/PinkBunny/
           Compress-Archive -Path dist/PinkBunny -DestinationPath dist/PinkBunny-Windows.zip -CompressionLevel Optimal -Force
+      - name: Install Inno Setup compiler
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress -y
+          $iscc = "${env:ProgramFiles(x86)}\\Inno Setup 6\\ISCC.exe"
+          if (-not (Test-Path $iscc)) { throw "Inno Setup compiler missing" }
+      - name: Build beginner-friendly Windows setup
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\\Inno Setup 6\\ISCC.exe"
+          & $iscc installer/PinkBunny.iss
+          if ($LASTEXITCODE -ne 0) { throw "Installer build failed" }
+          if (-not (Test-Path dist/PinkBunny-Setup.exe)) { throw "Installer output missing" }
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
@@ -48,4 +61,4 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             gh release create beta --target $env:GITHUB_SHA --title "Pink Bunny - 최신 베타 다운로드" --notes "Windows: PinkBunny-Windows.zip 다운로드 → 압축해제 → INSTALL_KO.txt를 순서대로 따라하세요. 아직 실제 다수 Windows/OBS 환경 검증 전 베타입니다." --prerelease
           }
-          gh release upload beta "dist/PinkBunny-Windows.zip" --clobber
+          gh release upload beta "dist/PinkBunny-Windows.zip" "dist/PinkBunny-Setup.exe" --clobber
