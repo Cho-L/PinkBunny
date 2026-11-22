@@ -1,14 +1,15 @@
 {
   "manifest_version": 3,
   "name": "Pink Bunny - YouTube Now Playing",
-  "version": "11.2.0",
+  "version": "11.3.0",
   "description": "YouTube and YouTube Music OBS widget: playlist next-track preview, transport controls, smart filters.",
   "permissions": [
     "tabs",
     "storage"
   ],
   "host_permissions": [
-    "http://*/*",
+    "http://127.0.0.1/*",
+    "http://localhost/*",
     "https://www.youtube.com/*",
     "https://music.youtube.com/*"
   ],
@@ -30,5 +31,8 @@
   "action": {
     "default_title": "Pink Bunny 연결 설정",
     "default_popup": "popup.html"
-  }
+  },
+  "optional_host_permissions": [
+    "http://*/*"
+  ]
 }
