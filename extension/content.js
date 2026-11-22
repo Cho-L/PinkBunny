@@ -62,7 +62,20 @@
     try{
       switch(message.action){
         case 'toggle':
-          if(video.paused)video.play().catch(()=>{});else video.pause();break;
+          if(video.paused){
+            // Wait for the browser to accept play(): autoplay restrictions can
+            // reject the promise even when a click command was delivered.
+            Promise.resolve().then(()=>video.play()).then(()=>{
+              sendResponse(video.paused
+                ?{ok:false,error:'브라우저가 영상 재생을 시작하지 않았습니다.'}
+                :{ok:true});
+              setTimeout(read,100);
+            }).catch(e=>sendResponse({ok:false,error:String(e?.message||e||'재생이 차단됐습니다.')}));
+            return true; // Keep Chrome's message channel open for async reply.
+          }
+          video.pause();
+          if(!video.paused){sendResponse({ok:false,error:'일시정지가 적용되지 않았습니다.'});return;}
+          break;
         case 'previous':
         case 'next':{
           const selectors=message.action==='next'
