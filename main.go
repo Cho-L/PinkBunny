@@ -12,6 +12,8 @@ import (
  "net/http"
  "net/url"
  "os"
+ "os/exec"
+ "runtime"
  "sort"
  "strings"
  "sync"
@@ -96,11 +98,43 @@ func update(w http.ResponseWriter,r *http.Request,s *Store,remove bool,key strin
  }
  s.publish();reply(w,200,map[string]bool{"ok":true})
 }
+func isLocal(r *http.Request) bool {
+ host,_,err:=net.SplitHostPort(r.RemoteAddr)
+ if err!=nil{return false}
+ ip:=net.ParseIP(host)
+ return ip!=nil&&ip.IsLoopback()
+}
+func localIPs() []string {
+ ips:=[]string{}
+ for _,a:=range mustInterfaceAddrs(){if ipnet,ok:=a.(*net.IPNet);ok{
+  ip:=ipnet.IP.To4()
+  if ip!=nil&&!ip.IsLoopback()&&ip.IsPrivate(){ips=append(ips,ip.String())}
+ }}
+ return ips
+}
+func openBrowser(address string) {
+ var command *exec.Cmd
+ switch runtime.GOOS {
+ case "windows": command=exec.Command("rundll32","url.dll,FileProtocolHandler",address)
+ case "darwin": command=exec.Command("open",address)
+ default: command=exec.Command("xdg-open",address)
+ }
+ _=command.Start()
+}
 func main(){
  random:=make([]byte,4);if _,err:=rand.Read(random);err!=nil{log.Fatal(err)}
  key:=strings.ToUpper(hex.EncodeToString(random))
  s:=&Store{tabs:map[int]Tab{},listeners:map[chan Status]struct{}{}}
  mux:=http.NewServeMux()
+ mux.HandleFunc("/api/pair",func(w http.ResponseWriter,r *http.Request){
+  if !isLocal(r){http.Error(w,"Local access only",403);return}
+  if r.Method!="GET"{http.Error(w,"Method not allowed",405);return}
+  reply(w,200,map[string]any{"code":key,"ips":localIPs(),"port":38765})
+ })
+ mux.HandleFunc("/setup",func(w http.ResponseWriter,r *http.Request){
+  if !isLocal(r){http.Error(w,"Local access only",403);return}
+  w.Header().Set("Content-Type","text/html; charset=utf-8"); b,e:=assets.ReadFile("overlay/setup.html");if e!=nil{http.Error(w,"Missing setup",500);return};_,_=w.Write(b)
+ })
  mux.HandleFunc("/api/status",func(w http.ResponseWriter,r *http.Request){if r.Method!="GET"{http.Error(w,"Method not allowed",405);return};s.Lock();st:=s.snapshot();s.Unlock();reply(w,200,st)})
  mux.HandleFunc("/api/update",func(w http.ResponseWriter,r *http.Request){update(w,r,s,false,key)})
  mux.HandleFunc("/api/remove",func(w http.ResponseWriter,r *http.Request){update(w,r,s,true,key)})
@@ -140,9 +174,11 @@ func main(){
  if err!=nil{fmt.Fprintln(os.Stderr,"Port 38765 is in use:",err);return}
  fmt.Println("🐰 Pink Bunny | OBS: http://127.0.0.1:38765")
  fmt.Println("Connection code:",key)
- for _,a:=range mustInterfaceAddrs(){if ipnet,ok:=a.(*net.IPNet);ok{ip:=ipnet.IP.To4();if ip!=nil&&!ip.IsLoopback(){fmt.Println("Streaming PC IPv4:",ip.String())}}}
+ for _,ip:=range localIPs(){fmt.Println("Streaming PC IPv4:",ip)}
+ fmt.Println("Setup guide: http://127.0.0.1:38765/setup")
  fmt.Println("Keep this window open. Close it to stop.")
  go func(){tick:=time.NewTicker(4*time.Second);defer tick.Stop();for range tick.C{s.Lock();s.publish();s.Unlock()}}()
+ go func(){time.Sleep(350*time.Millisecond);openBrowser("http://127.0.0.1:38765/setup")}()
  log.Fatal(http.Serve(ln,handler))
 }
 func mustInterfaceAddrs()[]net.Addr{a,_:=net.InterfaceAddrs();return a}
