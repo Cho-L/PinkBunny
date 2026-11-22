@@ -22,7 +22,6 @@ CloseApplications=yes
 RestartApplications=no
 
 [Languages]
-Name: "korean"; MessagesFile: "compiler:Languages\Korean.isl"
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
@@ -30,7 +29,7 @@ Name: "desktopicon"; Description: "바탕화면에 Pink Bunny 바로가기 만�
 
 [Files]
 Source: "..\PinkBunny.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "extension\*"; DestDir: "{app}\extension"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\extension\*"; DestDir: "{app}\extension"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\INSTALL_KO.txt"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
