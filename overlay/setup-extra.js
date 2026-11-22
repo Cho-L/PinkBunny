@@ -18,6 +18,54 @@
  <p class="tiny" id="pb-obs-status" role="status"></p>`;
  const last=doc.querySelector('#message');
  last.parentElement.insertBefore(card,last);
+ // Automatic diagnosis deliberately checks only measurable data. OBS and
+ // audio require a manual check unless the user connects to OBS WebSocket.
+ const diag=doc.createElement('section');
+ diag.className='card';
+ diag.id='pb-diagnostics';
+ diag.innerHTML=`<strong>🩺 방송 준비 자동 진단</strong>
+ <p class="tiny">Pink Bunny·Chrome 통신·유튜브 정보는 자동 확인합니다. OBS 소스와 오디오는 직접 확인해야 합니다.</p>
+ <div class="row"><button id="pb-diag-refresh">🔄 지금 다시 확인</button><a href="/guide#feature-troubleshooting" target="_blank" rel="noopener">📘 문제 해결 그림</a></div>
+ <p id="pb-diag-summary" role="status" class="tiny">방송 상태를 확인하는 중…</p>
+ <div id="pb-diag-list" style="display:grid;gap:8px"></div>`;
+ card.parentElement.insertBefore(diag,card);
+ const diagSummary=doc.getElementById('pb-diag-summary');
+ const diagList=doc.getElementById('pb-diag-list');
+ const diagRefresh=doc.getElementById('pb-diag-refresh');
+ async function loadDiagnostics(){
+  diagRefresh.disabled=true;
+  diagSummary.textContent='상태를 확인하는 중…';
+  try{
+   const r=await fetch('/api/diagnostics',{signal:AbortSignal.timeout(4000)});
+   if(!r.ok)throw Error('서버 진단 요청에 실패했습니다.');
+   const data=await r.json();
+   diagList.replaceChildren();
+   const checks=Array.isArray(data.checks)?data.checks:[];
+   let ok=0,attention=0,manual=0;
+   for(const check of checks){
+    const state=check.state==='ok'?'ok':check.state==='manual'?'manual':'attention';
+    if(state==='ok')ok++;else if(state==='manual')manual++;else attention++;
+    const entry=doc.createElement('div');
+    entry.style.cssText='padding:10px 12px;border:1px solid #eacbdd;border-radius:10px;background:#fff';
+    const title=doc.createElement('strong');
+    title.textContent=(state==='ok'?'✅ ':state==='manual'?'🔎 ':'⚠️ ')+check.label;
+    const detail=doc.createElement('p');
+    detail.className='tiny';
+    detail.style.margin='4px 0';
+    detail.textContent=check.detail;
+    const help=doc.createElement('small');
+    help.textContent=check.help||'';
+    entry.append(title,detail,help);
+    diagList.appendChild(entry);
+   }
+   diagSummary.textContent=`자동 확인 ${ok}개 정상 · ${attention}개 확인 필요 · ${manual}개 수동 점검 (OBS/오디오는 자동 검사 대상 아님)`;
+  }catch(e){
+   diagSummary.textContent='❌ 진단 데이터를 읽지 못했습니다: '+e.message;
+  }finally{diagRefresh.disabled=false;}
+ }
+ diagRefresh.onclick=loadDiagnostics;
+ loadDiagnostics();
+ setInterval(()=>{if(!doc.hidden)loadDiagnostics();},12000);
  const result=doc.getElementById('pb-result');
  const start=doc.getElementById('pb-start');
  let enabled=false;
@@ -38,12 +86,8 @@
    start.disabled=false;await load();
  };
  doc.getElementById('pb-check').onclick=async()=>{
-  result.textContent='확인하는 중…';
-  try{
-   const r=await fetch('/api/status');if(!r.ok)throw Error();const d=await r.json();
-   result.textContent=d.connected?('✅ 서버 정상 / 유튜브 연결 확인 / '+(d.playing?'재생 중':'일시정지')+' / '+d.title)
-    :'✅ 서버 정상 · 유튜브 정보는 아직 받지 못했어요. 확장 프로그램 연결과 영상 재생을 확인하세요.';
-  }catch{result.textContent='❌ Pink Bunny 서버 연결에 실패했습니다.';}
+  diag.scrollIntoView({behavior:'smooth',block:'start'});
+  await loadDiagnostics();
  };
  const obsStatus=doc.getElementById('pb-obs-status');
  function b64(bytes){let str='';for(const b of bytes)str+=String.fromCharCode(b);return btoa(str);}
@@ -109,7 +153,7 @@
  const controls=doc.createElement('section');
  controls.className='card';
  controls.innerHTML=`<strong>⑥ 🎮 유튜브 원격 제어 (1컴·2컴)</strong>
- <p class="tiny">송출 PC에서 음악 PC의 유튜브를 조절할 수 있어요. 유튜브가 재생 중이고 크롬 확장 프로그램이 연결돼 있어야 합니다. 명령이 전달되기까지 약간의 지연이 있을 수 있어요.</p>
+ <p class="tiny">송출 PC에서 음악 PC의 유튜브를 조절할 수 있어요. 유튜브가 재생 중이고 크롬 확장 프로그램이 연결돼 있어야 합니다. 버튼을 누르면 음악 PC Chrome의 명령 처리 결과까지 확인해요. 유튜브 실제 재생 화면의 변화는 별도로 확인해야 할 수 있어요.</p>
  <div class="row">
  <button data-pb-remote="previous">⏮ 이전 곡</button>
  <button data-pb-remote="toggle">⏯ 재생 / 일시정지</button>
@@ -119,16 +163,44 @@
  </div><p id="pb-remote-result" class="tiny" role="status"></p>
  <p class="tiny">팁: 송출 PC의 설정 페이지에서 제어하는 기능이에요. 영상 사이트에서 이전/다음 버튼을 제공하지 않으면 해당 명령은 작동하지 않을 수 있습니다.</p>`;
  last.parentElement.insertBefore(controls,last);
- controls.querySelectorAll('[data-pb-remote]').forEach(button=>button.onclick=async()=>{
-   const result=doc.getElementById('pb-remote-result');
-   button.disabled=true;
-   try{
-    const r=await fetch('/api/control',{method:'POST',headers:{'Content-Type':'application/json','X-PinkBunny-Action':'1'},body:JSON.stringify({action:button.dataset.pbRemote})});
-    const data=await r.json().catch(()=>({}));
-    if(!r.ok)throw Error(data.error||'유튜브 연결 상태를 확인해 주세요.');
-    result.textContent='✅ 명령 전달 요청 완료 · 음악 PC에서 적용 여부를 확인해 주세요.';
-   }catch(e){result.textContent='❌ '+e.message;}
-   finally{button.disabled=false;}
+ const remoteButtons=[...controls.querySelectorAll('[data-pb-remote]')];
+ remoteButtons.forEach(button=>button.onclick=async()=>{
+  const result=doc.getElementById('pb-remote-result');
+  remoteButtons.forEach(b=>b.disabled=true);
+  result.textContent='⌛ 음악 PC에 제어 명령을 전달하고 있습니다…';
+  try{
+   const response=await fetch('/api/control',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-PinkBunny-Action':'1'},
+    body:JSON.stringify({action:button.dataset.pbRemote})
+   });
+   const data=await response.json().catch(()=>({}));
+   if(!response.ok)throw Error(data.error||'유튜브 연결 상태를 확인해 주세요.');
+   if(!data.id){result.textContent='⚠️ 이전 버전 서버가 요청을 접수했습니다. 실행 결과는 확인할 수 없습니다.';return;}
+   result.textContent='⌛ 명령 접수됨 · 유튜브 실행 응답을 확인하는 중…';
+   for(let attempt=0;attempt<38;attempt++){
+    await new Promise(resolve=>setTimeout(resolve,800));
+    const r=await fetch('/api/control/result?id='+encodeURIComponent(data.id),{
+     signal:AbortSignal.timeout(4000)
+    });
+    if(!r.ok)throw Error('명령 상태 조회에 실패했습니다.');
+    const report=await r.json();
+    if(report.state==='success'){
+     result.textContent='✅ 음악 PC Chrome에서 명령 처리를 확인했습니다. 실제 영상 화면도 확인해 주세요.';
+     return;
+    }
+    if(report.state==='failed'){
+     result.textContent='❌ 유튜브 명령 처리 실패: '+(report.error||'이유 불명');
+     return;
+    }
+    if(report.state==='timeout'){
+     result.textContent='⚠️ 시간 초과: '+(report.error||'음악 PC 응답이 없습니다.');
+     return;
+    }
+   }
+   result.textContent='⚠️ 명령 접수 후 응답이 지연되고 있습니다. 음악 PC 재생 상태를 확인해 주세요.';
+  }catch(e){result.textContent='❌ '+e.message;}
+  finally{remoteButtons.forEach(b=>b.disabled=false);}
  });
 
 })();
