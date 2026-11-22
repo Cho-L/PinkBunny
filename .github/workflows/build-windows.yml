@@ -27,7 +27,7 @@ jobs:
           node --check extension/background.js
           node --check extension/content.js
           node --check extension/popup.js
-          node --test tests/*.test.cjs
+          node --test tests/extension-content.test.cjs tests/popup.test.cjs
           node --check overlay/app.js
           node --check overlay/theme-settings.js
           Get-Content extension/manifest.json -Raw | ConvertFrom-Json | Out-Null
