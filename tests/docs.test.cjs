@@ -138,3 +138,15 @@ test('setup diagnosis and command ACK are rendered, but OBS audio verification i
  assert.match(diag,/방송 음악 오디오/);
  assert.match(controls,/\/api\/command-result/);
 });
+
+test('Chrome content-script recovery has permission, bounded retry and duplicate-install guard',()=>{
+ const manifest=JSON.parse(read('extension/manifest.json'));
+ assert.ok(manifest.permissions.includes('scripting'),'Dynamic recovery requires scripting permission');
+ for(const file of ['extension/popup.js','extension/background.js']){
+  const js=read(file);
+  assert.match(js,/chrome\.scripting\.executeScript/);
+  assert.match(js,/Receiving end does not exist/);
+  assert.match(js,/files:\['content\.js'\]/);
+ }
+ assert.match(read('extension/content.js'),/__pinkBunnyContentAttached/);
+});
