@@ -27,10 +27,10 @@
     const label=n=>(
       n?.querySelector('#video-title, .song-title, yt-formatted-string.title, .title')?.getAttribute('title')||
       n?.querySelector('#video-title, .song-title, yt-formatted-string.title, .title')?.textContent||''
-    ).replace(/\\s+/g,' ').trim().slice(0,180);
+    ).replace(/\s+/g,' ').trim().slice(0,180);
     const byline=n=>(
       n?.querySelector('#byline, .byline, .subtitle, #metadata')?.textContent||''
-    ).replace(/\\s+/g,' ').trim().slice(0,90);
+    ).replace(/\s+/g,' ').trim().slice(0,90);
     if(active<0||active+1>=nodes.length)return {nextTitle:'',nextChannel:''};
     const next=nodes[active+1];
     return {nextTitle:label(next),nextChannel:byline(next)};
