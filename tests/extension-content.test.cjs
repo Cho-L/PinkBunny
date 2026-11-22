@@ -14,13 +14,17 @@ function setup(){
  const nodes=[mockItem('Playing','Artist',true),mockItem('  Next   Song  ','Next Artist')];
  let ad=false;
  let musicControl=null;
+ let regularNextControl=null;
+ let regularPrevControl=null;
  const playlist={querySelectorAll:()=>nodes};
  const doc={title:'Current Song - YouTube',
  querySelector(selector){
   if(selector==='video.html5-main-video'||selector==='video')return video;
   if(selector==='ytd-playlist-panel-renderer')return playlist;
   if(selector.includes('ad-showing'))return ad?{}:null;
-  if(selector==='ytmusic-app-layout .next-button'||selector==='ytmusic-app-layout .previous-button')return musicControl;
+  if(selector==='ytmusic-player-bar .next-button'||selector==='ytmusic-player-bar .previous-button')return musicControl;
+  if(selector==='#movie_player .ytp-next-button'||selector==='.ytp-next-button')return regularNextControl;
+  if(selector==='#movie_player .ytp-prev-button'||selector==='.ytp-prev-button')return regularPrevControl;
   if(selector.includes('h1.ytd-watch-metadata'))return {textContent:'Current Song'};
   return null; },
  addEventListener(){} };
@@ -29,7 +33,7 @@ function setup(){
  runtime:{sendMessage(data){messages.push(data);return Promise.resolve()},onMessage:{addListener(fn){listeners.message=fn}}}};
  const ctx={document:doc,location:page,chrome,URL,setInterval(fn){intervals.push(fn)},setTimeout(fn){return 1},window:{addEventListener(){}}};
  vm.runInNewContext(content,ctx,{timeout:2000,filename:'extension/content.js'});
- return {messages,intervals,listeners,video,nodes,page,setAd(v){ad=v},setMusicControl(v){musicControl=v}};
+ return {messages,intervals,listeners,video,nodes,page,setAd(v){ad=v},setMusicControl(v){musicControl=v},setRegularNextControl(v){regularNextControl=v},setRegularPrevControl(v){regularPrevControl=v}};
 }
 test('playlist next title and byline come from the item immediately after selected',async()=>{
  const m=setup();await Promise.resolve();m.intervals[0]();
@@ -112,12 +116,59 @@ test('at maximum or minimum volume the player does not falsely report successful
  assert.equal(response.ok,false);
  assert.match(response.error,/최소 음량/);
 });
+test('standard YouTube next uses the native anchor-based transport button',()=>{
+ const m=setup();
+ let clicks=0;
+ // Real YouTube's control often renders as <a class="ytp-next-button">.
+ const anchor={tagName:'A',disabled:false,getAttribute:()=>null,getClientRects:()=>[{}],click(){clicks++}};
+ m.setRegularNextControl(anchor);
+ let result;
+ m.listeners.message({type:'pinkbunny-player-command',action:'next'},null,r=>result=r);
+ assert.equal(result.ok,true);
+ assert.equal(clicks,1);
+});
+test('standard YouTube previous supports anchor control too',()=>{
+ const m=setup();
+ let clicks=0;
+ m.setRegularPrevControl({tagName:'A',disabled:false,getAttribute:()=>null,getClientRects:()=>[{}],click(){clicks++}});
+ let result;
+ m.listeners.message({type:'pinkbunny-player-command',action:'previous'},null,r=>result=r);
+ assert.equal(result.ok,true);
+ assert.equal(clicks,1);
+});
+test('hidden or disabled native next control reports unavailable instead of clicking',()=>{
+ const m=setup();
+ let clicks=0;
+ const control={tagName:'A',disabled:false,getAttribute:name=>name==='aria-disabled'?'true':null,getClientRects:()=>[{}],click(){clicks++}};
+ m.setRegularNextControl(control);
+ let result;
+ m.listeners.message({type:'pinkbunny-player-command',action:'next'},null,r=>result=r);
+ assert.equal(result.ok,false);
+ assert.match(result.error,/비활성화/);
+ assert.equal(clicks,0);
+ control.getAttribute=()=>null;
+ control.getClientRects=()=>[];
+ m.listeners.message({type:'pinkbunny-player-command',action:'next'},null,r=>result=r);
+ assert.equal(result.ok,false);
+ assert.equal(clicks,0);
+});
+test('YouTube Music next uses player-bar native control instead of recommendations',()=>{
+ const m=setup();
+ m.page.hostname='music.youtube.com';
+ m.page.href='https://music.youtube.com/watch?v=abc12345678';
+ let clicks=0;
+ m.setMusicControl({tagName:'TP-YT-PAPER-ICON-BUTTON',disabled:false,getAttribute:()=>null,getClientRects:()=>[{}],click(){clicks++}});
+ let result;
+ m.listeners.message({type:'pinkbunny-player-command',action:'next'},null,r=>result=r);
+ assert.equal(result.ok,true);
+ assert.equal(clicks,1);
+});
 test('next video only claims button press when an enabled YouTube Music transport exists',()=>{
  const m=setup();
  let response;
  m.listeners.message({type:'pinkbunny-player-command',action:'next'},null,r=>response=r);
  assert.equal(response.ok,false);
- assert.match(response.error,/다음 버튼을 찾을 수 없습니다/);
+ assert.match(response.error,/다음 버튼을 찾지 못했습니다/);
  let clicked=0;
  m.setMusicControl({disabled:false,getAttribute:()=>null,getClientRects:()=>[{}],click(){clicked++}});
  m.listeners.message({type:'pinkbunny-player-command',action:'next'},null,r=>response=r);
