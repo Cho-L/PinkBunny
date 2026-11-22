@@ -73,3 +73,24 @@ test('feature tutorial links are embedded in offline guide and available from po
   assert.ok(api.includes(svg),'Embedded HTTP server misses '+svg);
  }
 });
+
+test('GitHub public guide links open rendered Markdown gallery rather than raw HTML source', () => {
+  const guide = read('GUIDE.md');
+  const featureManual = read('FEATURE_GUIDE_KO.md');
+  assert.match(guide, /^## Install$/m);
+  assert.match(guide, /^## Features$/m);
+  assert.match(readme, /\[📘 설치 그림 안내\]\(GUIDE\.md#install\)/);
+  assert.match(readme, /\[✨ 기능 사용 그림 7장\]\(GUIDE\.md#features\)/);
+  assert.ok(!readme.includes('overlay/guide.html#'), 'README must not link to HTML source on GitHub');
+  assert.ok(!featureManual.includes('overlay/guide.html#'), 'Feature manual must not link to HTML source on GitHub');
+  const illustrations = [
+    'guide-quickstart-1pc.svg', 'guide-quickstart-2pc.svg',
+    'guide-chrome-extension.svg', 'guide-obs-source.svg',
+    ...['extension','tabs','controls','design','remote','filters','troubleshoot'].map(n=>'guide-feature-'+n+'.svg')
+  ];
+  for(const file of illustrations){
+    const path='overlay/'+file;
+    assert.ok(guide.includes(']('+path+')'), 'Markdown does not embed guide image '+path);
+    assert.ok(fs.existsSync(path), 'Missing illustration '+path);
+  }
+});
