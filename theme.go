@@ -16,14 +16,19 @@ type Theme struct {
  Animate bool `json:"animate"`
  ShowCover bool `json:"showCover"`
  Layout string `json:"layout"`
+ AvatarScale int `json:"avatarScale"`
+ AvatarX int `json:"avatarX"`
+ AvatarY int `json:"avatarY"`
 }
 type themeService struct {sync.RWMutex; value Theme; file string}
-func defaultTheme()Theme{return Theme{Color:"pink",Opacity:78,Scale:100,Animate:true,ShowCover:true,Layout:"classic"}}
+func defaultTheme()Theme{return Theme{Color:"pink",Opacity:78,Scale:100,Animate:true,ShowCover:true,Layout:"classic",AvatarScale:100}}
 func validateTheme(t Theme)error{
  switch t.Color {case "pink","purple","mint","peach":default:return errors.New("invalid color")}
  if t.Opacity<20||t.Opacity>100 {return errors.New("opacity must be 20-100")}
  if t.Scale<75||t.Scale>100 {return errors.New("scale must be 75-100")}
  switch t.Layout {case "", "classic","compact","cover":default:return errors.New("invalid layout")}
+ if t.AvatarScale!=0&&(t.AvatarScale<50||t.AvatarScale>200){return errors.New("avatar scale must be 50-200")}
+ if t.AvatarX < -40||t.AvatarX>40||t.AvatarY < -40||t.AvatarY>40{return errors.New("avatar offsets must be -40 to 40")}
  return nil
 }
 func makeThemeService()*themeService{
@@ -34,7 +39,7 @@ func makeThemeService()*themeService{
  b,e:=os.ReadFile(t.file)
  if e==nil{
   var settings Theme
-  if json.Unmarshal(b,&settings)==nil && validateTheme(settings)==nil {if settings.Layout==""{settings.Layout="classic"};t.value=settings}
+  if json.Unmarshal(b,&settings)==nil && validateTheme(settings)==nil {if settings.Layout==""{settings.Layout="classic"};if settings.AvatarScale==0{settings.AvatarScale=100};t.value=settings}
  }
  return t
 }
@@ -53,6 +58,7 @@ func (t *themeService) handler(w http.ResponseWriter,r *http.Request){
  var v Theme
  if dec.Decode(&v)!=nil||validateTheme(v)!=nil{reply(w,400,map[string]string{"error":"Invalid theme settings"});return}
  if v.Layout==""{v.Layout="classic"}
+ if v.AvatarScale==0{v.AvatarScale=100}
  t.Lock();defer t.Unlock()
  if t.file!="" {
   dir:=filepath.Dir(t.file)
