@@ -1,5 +1,5 @@
 #define MyAppName "Pink Bunny"
-#define MyAppVersion "11.0.1"
+#define MyAppVersion "11.1.0"
 #define MyAppPublisher "Pink Bunny"
 #define MyAppExeName "PinkBunny.exe"
 
@@ -31,9 +31,12 @@ Name: "desktopicon"; Description: "바탕화면에 Pink Bunny 바로가기 만�
 Source: "..\PinkBunny.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\extension\*"; DestDir: "{app}\extension"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\INSTALL_KO.txt"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\overlay\guide.html"; DestDir: "{app}\guide"; DestName: "index.html"; Flags: ignoreversion
+Source: "..\overlay\guide-*.svg"; DestDir: "{app}\guide"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\Pink Bunny"; Filename: "{app}\{#MyAppExeName}"
+Name: "{autoprograms}\Pink Bunny 그림 설치 가이드"; Filename: "{app}\guide\index.html"
 Name: "{autodesktop}\Pink Bunny"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
