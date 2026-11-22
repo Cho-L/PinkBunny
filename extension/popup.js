@@ -15,12 +15,19 @@ document.getElementById('openFeatureGuide').addEventListener('click',async()=>{
   message.textContent='❌ 연결 주소를 확인한 후 기능 가이드를 열어 주세요.';
   return;
  }
- chrome.tabs.create({url:'http://'+host+':38765/guide#features'});
+ // On a separate music PC the OBS setup/guide is intentionally LAN-private.
+ const url=(host==='127.0.0.1'||host==='localhost')
+  ?'http://'+host+':38765/guide#features'
+  :'https://github.com/Cho-L/PinkBunny/blob/main/GUIDE.md#features';
+ chrome.tabs.create({url});
 });
 function validHost(host){
  if(host==='localhost')return true;
  const parts=host.split('.');
- return parts.length===4&&parts.every(part=>/^\d{1,3}$/.test(part)&&Number(part)>=0&&Number(part)<=255);
+ if(parts.length!==4||!parts.every(part=>/^\d{1,3}$/.test(part)&&Number(part)>=0&&Number(part)<=255))return false;
+ const [a,b]=parts.map(Number);
+ return (a===127&&b===0&&Number(parts[2])===0&&Number(parts[3])===1)||
+        a===10||(a===172&&b>=16&&b<=31)||(a===192&&b===168);
 }
 const server=document.getElementById('server'),key=document.getElementById('key'),status=document.getElementById('status'),pair=document.getElementById('pair');
 chrome.storage.local.get(['server','key']).then(async s=>{
@@ -33,7 +40,15 @@ chrome.storage.local.get(['server','key']).then(async s=>{
  }
 });
 async function connect(host,code){
- if(!validHost(host)||!/^[A-F0-9]{8}$/.test(code)){status.textContent='❌ 주소 또는 연결 코드가 올바르지 않습니다.';return false;}
+ if(!validHost(host)||!(/^[A-F0-9]{8}$/.test(code)||/^[A-F0-9]{32}$/.test(code))){status.textContent='❌ 주소 또는 연결 코드가 올바르지 않습니다.';return false;}
+ // A separate music PC requests permission only for the selected streaming
+ // PC address, never unrestricted web access during extension installation.
+ if(host!=='127.0.0.1'&&host!=='localhost'){
+  try{
+   const permitted=await chrome.permissions.request({origins:['http://'+host+'/*']});
+   if(!permitted){status.textContent='❌ 송출 PC 접근 권한이 필요합니다. 연결 주소 적용을 눌러 권한을 허용해 주세요.';return false;}
+  }catch{status.textContent='❌ 2컴 연결 주소 적용 버튼에서 송출 PC 접근 권한을 허용해 주세요.';return false;}
+ }
  status.textContent='서버 연결 중…';
  try{
   const result=await fetch('http://'+host+':38765/api/tabs',{headers:{'X-Bunny-Key':code,'X-Bunny-Extension':'1'},signal:AbortSignal.timeout(4000)});
