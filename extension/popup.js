@@ -185,19 +185,40 @@ document.getElementById('unpin').onclick=async()=>{
 };
 refreshCurrentTab();
 
+const controlStatus=document.getElementById('controlStatus');
 async function executeLocalControl(action){
+ controlStatus.textContent='⌛ 유튜브 탭과 연결하는 중…';
  const [tab]=await chrome.tabs.query({active:true,currentWindow:true});
  let target=isYouTubeTab(tab)?tab:null;
  if(!target&&fullPage){
   const all=await chrome.tabs.query({currentWindow:true});
   const selected=Number(tabsSelect.value);
-  target=all.find(t=>isYouTubeTab(t)&&t.id===selected)||all.filter(isYouTubeTab).sort((a,b)=>(b.lastAccessed||0)-(a.lastAccessed||0))[0];
+  target=all.find(t=>isYouTubeTab(t)&&t.id===selected)||
+   all.filter(isYouTubeTab).sort((a,b)=>(b.lastAccessed||0)-(a.lastAccessed||0))[0];
  }
- if(!target){status.textContent='❌ 유튜브 탭을 열어 주세요.';return;}
+ if(!target){
+  controlStatus.textContent='❌ 유튜브 영상이 열려 있는 탭에서 확장 프로그램을 사용해 주세요. 큰 화면 설정에서는 표시할 탭을 선택할 수 있어요.';
+  return;
+ }
+ controlStatus.textContent='⌛ '+(target.title||'YouTube').slice(0,36)+' 탭에 명령 전송 중…';
  try{
   const r=await chrome.tabs.sendMessage(target.id,{type:'pinkbunny-player-command',action});
-  status.textContent=r?.ok?'✅ 명령을 유튜브에 전달했어요.':'❌ '+(r?.error||'이 탭에서 제어할 수 없어요. 새로고침해 주세요.');
- }catch{status.textContent='❌ 유튜브 탭을 새로고침하고 다시 시도해 주세요.';}
+  if(!r?.ok){
+   controlStatus.textContent='❌ '+(r?.error||'유튜브에서 제어 응답이 없습니다. 영상 탭을 새로고침해 주세요.');
+   return;
+  }
+  if(action==='volumeUp'||action==='volumeDown'){
+   controlStatus.textContent=typeof r.volumePercent==='number'
+    ?'✅ 유튜브 영상 음량: '+r.volumePercent+'%'+(r.muted?' (음소거 중)':'')
+    :'✅ 유튜브 영상 음량 조절 요청 완료';
+  }else if(action==='next'||action==='previous'){
+   controlStatus.textContent='✅ 유튜브의 '+(action==='next'?'다음':'이전')+' 버튼을 눌렀어요. 실제 영상 전환 여부를 확인해 주세요.';
+  }else{
+   controlStatus.textContent='✅ 유튜브 재생/일시정지 명령을 처리했어요.';
+  }
+ }catch(e){
+  controlStatus.textContent='❌ 확장 프로그램이 이 유튜브 탭과 통신하지 못했습니다. chrome://extensions에서 확장 프로그램을 새로고침한 뒤 유튜브 페이지도 새로고침해 주세요.';
+ }
 }
 for(const button of document.querySelectorAll('[data-control]')){
  button.addEventListener('click',()=>executeLocalControl(button.dataset.control));
