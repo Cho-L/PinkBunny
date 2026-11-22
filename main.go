@@ -1,0 +1,148 @@
+package main
+
+import (
+ "crypto/rand"
+ "embed"
+ "encoding/hex"
+ "encoding/json"
+ "fmt"
+ "io"
+ "log"
+ "net"
+ "net/http"
+ "net/url"
+ "os"
+ "sort"
+ "strings"
+ "sync"
+ "time"
+)
+
+//go:embed overlay/*
+var assets embed.FS
+
+type Update struct {
+ TabID int `json:"tabId"`
+ URL string `json:"url"`
+ Title string `json:"title"`
+ Channel string `json:"channel"`
+ VideoID string `json:"videoId"`
+ Playing bool `json:"playing"`
+}
+type Tab struct {
+ Update
+ Seen time.Time
+ Activated time.Time
+}
+type Status struct {
+ Connected bool `json:"connected"`
+ Playing bool `json:"playing"`
+ Title string `json:"title"`
+ Channel string `json:"channel"`
+ VideoID string `json:"videoId"`
+ URL string `json:"url"`
+}
+type Store struct {
+ sync.Mutex
+ tabs map[int]Tab
+ lastID int
+ listeners map[chan Status]struct{}
+ lastJSON string
+}
+func (s *Store) snapshot() Status {
+ now:=time.Now()
+ all:=make([]Tab,0,len(s.tabs))
+ for id,t:=range s.tabs {if now.Sub(t.Seen)>12*time.Second{delete(s.tabs,id)}else{all=append(all,t)}}
+ sort.Slice(all,func(i,j int)bool{return all[i].Seen.After(all[j].Seen)})
+ var selected *Tab
+ for i:=range all {t:=&all[i];if t.Playing&&(selected==nil||!selected.Playing||t.Activated.After(selected.Activated)){selected=t}}
+ if selected==nil {for i:=range all{if all[i].TabID==s.lastID{selected=&all[i];break}}}
+ if selected==nil&&len(all)>0{selected=&all[0]}
+ if selected==nil{return Status{}}
+ s.lastID=selected.TabID
+ return Status{true,selected.Playing,selected.Title,selected.Channel,selected.VideoID,selected.URL}
+}
+func (s *Store) publish(){
+ st:=s.snapshot();b,_:=json.Marshal(st)
+ if string(b)==s.lastJSON{return}
+ s.lastJSON=string(b)
+ for ch:=range s.listeners{select{case ch<-st:default:}}
+}
+func reply(w http.ResponseWriter,code int,v any){w.Header().Set("Content-Type","application/json; charset=utf-8");w.Header().Set("Cache-Control","no-store");w.WriteHeader(code);_ = json.NewEncoder(w).Encode(v)}
+func clip(v string,max int)string{r:=[]rune(strings.TrimSpace(v));if len(r)>max{return string(r[:max])};return string(r)}
+func extensionOrigin(r *http.Request)bool{
+ origin:=r.Header.Get("Origin")
+ if strings.HasPrefix(origin,"chrome-extension://"){
+  id:=strings.TrimPrefix(origin,"chrome-extension://");if len(id)!=32{return false}
+  for _,c:=range id{if c<'a'||c>'p'{return false}};return true
+ }
+ return origin==""&&r.Header.Get("X-Bunny-Extension")=="1"
+}
+func update(w http.ResponseWriter,r *http.Request,s *Store,remove bool,key string){
+ if r.Method!="POST"{reply(w,405,map[string]string{"error":"Method not allowed"});return}
+ if !extensionOrigin(r)||r.Header.Get("X-Bunny-Key")!=key{reply(w,403,map[string]string{"error":"Not authorized"});return}
+ r.Body=http.MaxBytesReader(w,r.Body,8192);defer r.Body.Close()
+ var p Update
+ if json.NewDecoder(r.Body).Decode(&p)!=nil||p.TabID<0{reply(w,400,map[string]string{"error":"Bad payload"});return}
+ s.Lock();defer s.Unlock()
+ if remove{delete(s.tabs,p.TabID)}else{
+  u,e:=url.Parse(p.URL)
+  if e!=nil||u.Scheme!="https"||!(u.Hostname()=="www.youtube.com"||u.Hostname()=="music.youtube.com"||u.Hostname()=="youtube.com"){reply(w,400,map[string]string{"error":"Not YouTube"});return}
+  p.Title=clip(p.Title,220);if p.Title==""{reply(w,400,map[string]string{"error":"Empty title"});return}
+  p.Channel=clip(p.Channel,100);p.VideoID=clip(p.VideoID,25);p.URL=clip(p.URL,350)
+  now:=time.Now();old,ok:=s.tabs[p.TabID];active:=old.Activated
+  if p.Playing&&(!ok||!old.Playing||old.URL!=p.URL){active=now}
+  s.tabs[p.TabID]=Tab{p,now,active}
+ }
+ s.publish();reply(w,200,map[string]bool{"ok":true})
+}
+func main(){
+ random:=make([]byte,4);if _,err:=rand.Read(random);err!=nil{log.Fatal(err)}
+ key:=strings.ToUpper(hex.EncodeToString(random))
+ s:=&Store{tabs:map[int]Tab{},listeners:map[chan Status]struct{}{}}
+ mux:=http.NewServeMux()
+ mux.HandleFunc("/api/status",func(w http.ResponseWriter,r *http.Request){if r.Method!="GET"{http.Error(w,"Method not allowed",405);return};s.Lock();st:=s.snapshot();s.Unlock();reply(w,200,st)})
+ mux.HandleFunc("/api/update",func(w http.ResponseWriter,r *http.Request){update(w,r,s,false,key)})
+ mux.HandleFunc("/api/remove",func(w http.ResponseWriter,r *http.Request){update(w,r,s,true,key)})
+ mux.HandleFunc("/events",func(w http.ResponseWriter,r *http.Request){
+  if r.Method!="GET"{http.Error(w,"Method not allowed",405);return}
+  f,ok:=w.(http.Flusher);if !ok{http.Error(w,"Streaming unavailable",500);return}
+  w.Header().Set("Content-Type","text/event-stream; charset=utf-8");w.Header().Set("Cache-Control","no-cache, no-transform")
+  ch:=make(chan Status,2)
+  s.Lock();s.listeners[ch]=struct{}{};initial:=s.snapshot();s.Unlock()
+  defer func(){s.Lock();delete(s.listeners,ch);s.Unlock()}()
+  send:=func(st Status)bool{b,_:=json.Marshal(st);_,err:=fmt.Fprintf(w,"data: %s\n\n",b);if err!=nil{return false};f.Flush();return true}
+  if !send(initial){return}
+  heartbeat:=time.NewTicker(4*time.Second);defer heartbeat.Stop()
+  for{select{
+   case <-r.Context().Done():return
+   case st:=<-ch:if !send(st){return}
+   case <-heartbeat.C:if _,err:=io.WriteString(w,": ping\n\n");err!=nil{return};f.Flush()
+  }}
+ })
+ mux.HandleFunc("/",func(w http.ResponseWriter,r *http.Request){
+  if r.Method!="GET"{http.Error(w,"Method not allowed",405);return}
+  names:=map[string]string{"/":"index.html","/index.html":"index.html","/app.js":"app.js","/style.css":"style.css"}
+  name,ok:=names[r.URL.Path];if !ok{http.NotFound(w,r);return}
+  bytes,err:=assets.ReadFile("overlay/"+name);if err!=nil{http.Error(w,"Asset missing",500);return}
+  switch{case strings.HasSuffix(name,".html"):w.Header().Set("Content-Type","text/html; charset=utf-8");case strings.HasSuffix(name,".js"):w.Header().Set("Content-Type","application/javascript");case strings.HasSuffix(name,".css"):w.Header().Set("Content-Type","text/css")}
+  w.Header().Set("Cache-Control","no-store");_,_=w.Write(bytes)
+ })
+ handler:=http.HandlerFunc(func(w http.ResponseWriter,r *http.Request){
+  if origin:=r.Header.Get("Origin");strings.HasPrefix(origin,"chrome-extension://"){
+   w.Header().Set("Access-Control-Allow-Origin",origin);w.Header().Set("Vary","Origin")
+   w.Header().Set("Access-Control-Allow-Headers","Content-Type, X-Bunny-Key, X-Bunny-Extension")
+   w.Header().Set("Access-Control-Allow-Methods","GET, POST, OPTIONS")
+  }
+  if r.Method=="OPTIONS"{w.WriteHeader(204);return};mux.ServeHTTP(w,r)
+ })
+ ln,err:=net.Listen("tcp","0.0.0.0:38765")
+ if err!=nil{fmt.Fprintln(os.Stderr,"Port 38765 is in use:",err);return}
+ fmt.Println("🐰 Pink Bunny | OBS: http://127.0.0.1:38765")
+ fmt.Println("Connection code:",key)
+ for _,a:=range mustInterfaceAddrs(){if ipnet,ok:=a.(*net.IPNet);ok{ip:=ipnet.IP.To4();if ip!=nil&&!ip.IsLoopback(){fmt.Println("Streaming PC IPv4:",ip.String())}}}
+ fmt.Println("Keep this window open. Close it to stop.")
+ go func(){tick:=time.NewTicker(4*time.Second);defer tick.Stop();for range tick.C{s.Lock();s.publish();s.Unlock()}}()
+ log.Fatal(http.Serve(ln,handler))
+}
+func mustInterfaceAddrs()[]net.Addr{a,_:=net.InterfaceAddrs();return a}
