@@ -165,6 +165,8 @@ test('YouTube Music next uses player-bar native control instead of recommendatio
 });
 test('next video only claims button press when an enabled YouTube Music transport exists',()=>{
  const m=setup();
+ m.page.hostname='music.youtube.com';
+ m.page.href='https://music.youtube.com/watch?v=abc12345678';
  let response;
  m.listeners.message({type:'pinkbunny-player-command',action:'next'},null,r=>response=r);
  assert.equal(response.ok,false);
