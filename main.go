@@ -235,7 +235,11 @@ func main(){
   w.Header().Set("Cache-Control","no-store");w.Header().Set("X-Content-Type-Options","nosniff");_,_=w.Write(bytes)
  })
  handler:=http.HandlerFunc(func(w http.ResponseWriter,r *http.Request){
-  if origin:=r.Header.Get("Origin");strings.HasPrefix(origin,"chrome-extension://"){
+  // Reject DNS-rebound hosts and never expose player status/artwork/OBS UI
+  // beyond the streaming PC. The 2-PC extension uses paired API endpoints.
+  if !permittedClient(r){http.Error(w,"Local access or paired extension required",403);return}
+  if origin:=r.Header.Get("Origin");extensionOrigin(r)&&strings.HasPrefix(origin,"chrome-extension://")&&
+   (remoteExtensionEndpoint(r.URL.Path)||r.URL.Path=="/api/pair"){
    w.Header().Set("Access-Control-Allow-Origin",origin);w.Header().Set("Vary","Origin")
    w.Header().Set("Access-Control-Allow-Headers","Content-Type, X-Bunny-Key, X-Bunny-Extension")
    w.Header().Set("Access-Control-Allow-Methods","GET, POST, OPTIONS")
