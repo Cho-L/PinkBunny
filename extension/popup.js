@@ -30,3 +30,33 @@ document.getElementById('apply').onclick=async()=>{
  }catch{status.textContent='❌ 올바른 연결 주소가 아니에요. 송출 PC 설치 도우미에서 복사해 주세요.';}
 };
 document.getElementById('save').onclick=()=>connect(server.value.trim(),key.value.trim().toUpperCase());
+
+
+const tabsSelect=document.getElementById('tabs');
+async function refreshTabs(){
+ const cfg=await chrome.storage.local.get(['server','key']);
+ const host=cfg.server||'127.0.0.1', code=cfg.key||'';
+ if(!code){tabsSelect.replaceChildren(new Option('먼저 연결해 주세요','0'));return;}
+ try{
+   const r=await fetch('http://'+host+':38765/api/tabs',{headers:{'X-Bunny-Key':code,'X-Bunny-Extension':'1'},signal:AbortSignal.timeout(4000)});
+   if(!r.ok)throw Error('서버 인증 실패');
+   const data=await r.json();
+   tabsSelect.replaceChildren(new Option('자동 선택 (재생 중인 탭)','0'));
+   for(const t of data.tabs||[])tabsSelect.add(new Option((t.playing?'▶ ':'Ⅱ ')+t.title.slice(0,58)+' [탭 '+t.tabId+']',String(t.tabId)));
+   tabsSelect.value=String(data.pinnedId||0);
+ }catch(e){tabsSelect.replaceChildren(new Option('연결 실패 · 새로고침','0'));status.textContent='❌ 탭 목록 확인 실패: '+e.message;}
+}
+document.getElementById('refresh').onclick=refreshTabs;
+document.getElementById('selectTab').onclick=async()=>{
+ const cfg=await chrome.storage.local.get(['server','key']);
+ if(!cfg.key){status.textContent='먼저 서버와 연결해 주세요.';return;}
+ try{
+   const r=await fetch('http://'+(cfg.server||'127.0.0.1')+':38765/api/select',{
+     method:'POST',headers:{'Content-Type':'application/json','X-Bunny-Key':cfg.key,'X-Bunny-Extension':'1'},
+     body:JSON.stringify({tabId:Number(tabsSelect.value)})
+   });
+   if(!r.ok)throw Error('탭이 없거나 서버 인증이 실패했습니다.');
+   status.textContent='✅ OBS에 표시할 탭 설정을 적용했어요.';
+ }catch(e){status.textContent='❌ '+e.message;}
+};
+refreshTabs();
