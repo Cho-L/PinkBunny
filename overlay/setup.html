@@ -1,0 +1,22 @@
+<!doctype html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pink Bunny 설치 도우미</title><style>
+*{box-sizing:border-box}body{font-family:system-ui,"Malgun Gothic",sans-serif;margin:0;padding:28px 14px;background:linear-gradient(135deg,#fff5fa,#ffe7f4);color:#674459}
+main{max-width:730px;margin:auto;background:#ffffffeb;padding:28px;border-radius:24px;box-shadow:0 15px 40px #bd6f9b26}h1{color:#c8538e;margin-top:0}h2{font-size:19px;margin:22px 0 10px}p,li{line-height:1.8}.card{background:#fff1f8;padding:14px 18px;border-radius:15px;margin:10px 0}button{cursor:pointer;background:#d871a6;border:0;border-radius:10px;padding:10px 16px;color:white;font-size:14px}.secondary{background:#87657c}code{font-size:14px;background:#f8dcea;padding:4px 7px;border-radius:6px;overflow-wrap:anywhere}.tiny{font-size:13px;color:#987188}strong{color:#aa4279}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}select{padding:9px;border:1px solid #d8a2bf;border-radius:8px}#pairlink{width:100%;padding:10px;border:1px solid #e7b1ce;border-radius:8px;background:#fff;overflow-wrap:anywhere}small{display:block;margin-top:10px;color:#a26b86}</style></head><body>
+<main><h1>🐰 Pink Bunny 설치 도우미</h1><p>설치 안내가 자동으로 열렸어요! 아래 순서대로 진행해 주세요. <strong>이 창은 송출 PC에서만 열어야 합니다.</strong></p>
+<div class="card"><strong>① OBS 연결</strong><p>OBS → 소스 추가 → 브라우저 → URL에 아래 주소 붙여넣기 · 크기 <strong>420 × 130</strong></p><div class="row"><code>http://127.0.0.1:38765</code><button data-copy="http://127.0.0.1:38765">OBS 주소 복사</button></div></div>
+<div class="card"><strong>② 크롬 확장 프로그램 설치</strong><p>음악을 재생하는 PC의 크롬 주소창에 아래 주소를 입력한 다음 개발자 모드를 켜고, 압축을 푼 <strong>extension</strong> 폴더를 로드하세요.</p><div class="row"><code>chrome://extensions</code><button data-copy="chrome://extensions">주소 복사</button></div></div>
+<div class="card"><strong>③ 컴퓨터 선택 및 연결</strong><p>다음 중 사용하는 환경을 선택해 주세요.</p>
+<div class="row"><select id="mode"><option value="one">1컴 — 이 PC에서 유튜브와 OBS를 모두 사용</option><option value="two">2컴 — 다른 PC에서 유튜브 재생</option></select></div>
+<div id="single"><p>크롬에서 Pink Bunny 확장 프로그램을 열고 <strong>자동 연결</strong> 버튼을 누르세요. 코드 입력은 필요하지 않습니다.</p></div>
+<div id="dual" hidden><p>송출 PC의 IP를 선택한 뒤 아래 <strong>연결 주소 복사</strong> 버튼을 누르세요. 복사한 링크를 메신저 등으로 음악 PC로 전달한 뒤, <strong>음악 PC의 크롬 확장 프로그램 설정에 붙여넣으면 끝</strong>이에요.</p><label>송출 PC 네트워크 주소 <select id="ip"></select></label><p id="pairlink"></p><button id="copyPair">연결 주소 복사</button><small>연결 주소에는 개인 연결 코드가 포함됩니다. 공개 게시글이나 불특정 다수에게 공유하지 마세요. 두 PC는 같은 사설 네트워크를 사용해야 합니다.</small></div>
+</div><div class="card"><strong>④ 유튜브 음악 재생</strong><p>음악 PC에서 유튜브 페이지를 새로고침하고 영상을 재생하세요. 송출 PC의 OBS에 제목이 표시됩니다.</p></div>
+<p class="tiny" id="message">연결 정보를 확인하는 중…</p><small>⚠ 프로그램 창을 닫으면 작동이 멈춥니다. Windows 방화벽에서 허용을 묻는 경우 신뢰할 수 있는 개인 네트워크만 허용하세요. 포트포워딩은 필요하지 않습니다.</small>
+</main><script>
+let info;
+const mode=document.getElementById('mode'),dual=document.getElementById('dual'),single=document.getElementById('single'),ip=document.getElementById('ip');
+const setLink=()=>{if(!info)return;const host=ip.value,link='pinkbunny://pair?host='+encodeURIComponent(host)+'&port=38765&key='+encodeURIComponent(info.code);document.getElementById('pairlink').textContent=link;};
+mode.onchange=()=>{dual.hidden=mode.value!=='two';single.hidden=mode.value!=='one';};ip.onchange=setLink;
+async function copy(t){try{await navigator.clipboard.writeText(t);document.getElementById('message').textContent='✅ 복사했습니다.';}catch{document.getElementById('message').textContent='복사가 차단되면 텍스트를 직접 복사해 주세요.';}}
+document.querySelectorAll('[data-copy]').forEach(el=>el.onclick=()=>copy(el.dataset.copy));document.getElementById('copyPair').onclick=()=>copy(document.getElementById('pairlink').textContent);
+fetch('/api/pair').then(r=>r.json()).then(d=>{info=d;if(!d.ips?.length){document.getElementById('message').textContent='사용 가능한 사설 IPv4 주소를 찾지 못했습니다. 2컴은 네트워크 연결을 확인하세요.';return;}ip.innerHTML='';d.ips.forEach(value=>{const opt=document.createElement('option');opt.value=value;opt.textContent=value;ip.appendChild(opt)});setLink();document.getElementById('message').textContent='✅ 설치 도우미가 준비됐습니다.';}).catch(()=>{document.getElementById('message').textContent='❌ 서버와 연결할 수 없습니다.'});
+</script></body></html>
