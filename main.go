@@ -228,11 +228,11 @@ func main(){
  })
  mux.HandleFunc("/",func(w http.ResponseWriter,r *http.Request){
   if r.Method!="GET"{http.Error(w,"Method not allowed",405);return}
-  names:=map[string]string{"/":"index.html","/index.html":"index.html","/app.js":"app.js","/style.css":"style.css","/setup-extra.js":"setup-extra.js","/theme-settings.js":"theme-settings.js"}
+  names:=map[string]string{"/":"index.html","/index.html":"index.html","/app.js":"app.js","/style.css":"style.css","/setup-extra.js":"setup-extra.js","/theme-settings.js":"theme-settings.js","/guide":"guide.html","/guide.html":"guide.html","/guide-quickstart-1pc.svg":"guide-quickstart-1pc.svg","/guide-quickstart-2pc.svg":"guide-quickstart-2pc.svg","/guide-chrome-extension.svg":"guide-chrome-extension.svg","/guide-obs-source.svg":"guide-obs-source.svg"}
   name,ok:=names[r.URL.Path];if !ok{http.NotFound(w,r);return}
   bytes,err:=assets.ReadFile("overlay/"+name);if err!=nil{http.Error(w,"Asset missing",500);return}
-  switch{case strings.HasSuffix(name,".html"):w.Header().Set("Content-Type","text/html; charset=utf-8");case strings.HasSuffix(name,".js"):w.Header().Set("Content-Type","application/javascript");case strings.HasSuffix(name,".css"):w.Header().Set("Content-Type","text/css")}
-  w.Header().Set("Cache-Control","no-store");_,_=w.Write(bytes)
+  switch{case strings.HasSuffix(name,".html"):w.Header().Set("Content-Type","text/html; charset=utf-8");case strings.HasSuffix(name,".js"):w.Header().Set("Content-Type","application/javascript");case strings.HasSuffix(name,".css"):w.Header().Set("Content-Type","text/css");case strings.HasSuffix(name,".svg"):w.Header().Set("Content-Type","image/svg+xml")}
+  w.Header().Set("Cache-Control","no-store");w.Header().Set("X-Content-Type-Options","nosniff");_,_=w.Write(bytes)
  })
  handler:=http.HandlerFunc(func(w http.ResponseWriter,r *http.Request){
   if origin:=r.Header.Get("Origin");strings.HasPrefix(origin,"chrome-extension://"){
