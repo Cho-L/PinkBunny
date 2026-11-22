@@ -1,6 +1,23 @@
-# 🐰 Pink Bunny v11.0.1 · 유튜브 Now Playing을 OBS에 자동 표시
+# 🐰 Pink Bunny v11.1.0 · 유튜브 Now Playing을 OBS에 자동 표시
 
 > **Pink Bunny는 무료 프로그램입니다.** Chrome에서 재생 중인 유튜브 영상 제목을 OBS의 귀여운 반투명 핑크 토끼 플레이어로 표시해 줍니다. **1컴/2컴** 지원, 회원가입 불필요, 별도 Node.js 설치 불필요.
+
+## 🖼️ 그림으로 따라 하는 설치 가이드 (처음 쓰는 분 추천)
+
+**가장 먼저, 음악을 어느 PC에서 재생할지만 고르세요.** 송출용 컴퓨터가 두 대여도 음악을 **송출 PC에서 틀면** '이 PC에서 재생' 안내를 따라 하면 됩니다.
+
+**[📘 그림 설치 가이드 4종 보기](overlay/guide.html)**
+
+![Pink Bunny 이 PC에서 음악 재생 시 따라 하는 다섯 단계](overlay/guide-quickstart-1pc.svg)
+
+- [송출 PC에서 음악 재생: 빠른 설치 그림](overlay/guide-quickstart-1pc.svg)
+- [다른 PC에서 음악 재생: 2컴 연결 그림](overlay/guide-quickstart-2pc.svg)
+- [Chrome 확장 프로그램 등록 그림](overlay/guide-chrome-extension.svg)
+- [OBS 브라우저 소스 설정 그림](overlay/guide-obs-source.svg)
+
+**인터넷 없이도 볼 수 있습니다.** Windows 설치 후 시작 메뉴의 **Pink Bunny 그림 설치 가이드**를 열거나, ZIP 압축을 푼 폴더의 `guide/index.html`을 더블클릭하세요. Pink Bunny 실행 후 열리는 설치 도우미 첫 화면에서도 그림을 보거나 확대할 수 있습니다.
+
+위 그림은 실제 스크린샷이 아닌 **작업 순서를 설명하는 예시 화면**입니다. Chrome·OBS 버전에 따라 메뉴 위치가 조금 다를 수 있습니다.
 
 ## 💗 개발 지식 없이 설치하기
 
@@ -13,8 +30,8 @@
 
 **설치 없이 사용하려면:** Assets의 `PinkBunny-Windows.zip`을 선택해 압축 해제 후 EXE를 실행할 수도 있습니다.
 
-**1컴:** Chrome + PinkBunny.exe + OBS를 같은 PC에서 사용.  
-**2컴:** Chrome은 음악 PC, PinkBunny.exe와 OBS는 송출 PC에서 사용.
+**송출 PC에서 유튜브 재생:** Chrome + PinkBunny.exe + OBS가 한 PC에 있으면 됩니다. 실제 방송이 2컴이어도 이 방식입니다.  
+**다른 PC에서 유튜브 재생:** 음악 PC에는 Chrome 확장 프로그램, 송출 PC에는 PinkBunny.exe와 OBS를 사용합니다.
 
 ### 설치 핵심만 보기
 
