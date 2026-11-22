@@ -1,5 +1,5 @@
 const player=document.getElementById('player'),title=document.getElementById('title'),channel=document.getElementById('channel'),icon=document.getElementById('stateIcon'),frame=title.parentElement,progress=document.getElementById('progress'),elapsed=document.getElementById('elapsed'),durationEl=document.getElementById('duration'),cover=document.getElementById('cover');
-let previous='',current=null,lastUpdate=performance.now(),shownVideo='';
+let previous='',current=null,lastUpdate=performance.now(),shownVideo='',lastTrackKey='',transitionTimer=null;
 const fmt=s=>{s=Math.max(0,Math.floor(s||0));return Math.floor(s/3600)>0?Math.floor(s/3600)+':'+String(Math.floor(s%3600/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'):Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
 function updateClock(){
   const d=current||{},total=Number(d.duration)||0;
@@ -14,9 +14,26 @@ function render(d){
   player.classList.toggle('idle',!connected);player.classList.toggle('paused',connected&&!playing);
   icon.textContent=!connected?'♡':playing?'♫':'Ⅱ';
   const next=connected?(d.title||'제목 없음'):'유튜브 재생을 기다리는 중…';
+  // Trigger a short flourish only when the actual video changes, not for
+  // progress updates, pauses, or the first status event.
+  const trackKey=connected?(d.videoId||d.url||d.title||''):'';
+  if(trackKey&&lastTrackKey&&trackKey!==lastTrackKey){
+   player.classList.remove('song-change');
+   void player.offsetWidth;
+   player.classList.add('song-change');
+   if(transitionTimer)clearTimeout(transitionTimer);
+   transitionTimer=setTimeout(()=>player.classList.remove('song-change'),900);
+  }
+  lastTrackKey=trackKey;
   if(next!==previous){previous=next;title.textContent=next;title.classList.remove('scroll');
     requestAnimationFrame(()=>{const overflow=title.scrollWidth-frame.clientWidth;if(overflow>8){title.style.setProperty('--view',frame.clientWidth+'px');title.style.setProperty('--duration',Math.max(9,Math.ceil(overflow/24)+6)+'s');title.classList.add('scroll')}})}
   channel.textContent=connected?(d.channel||'YouTube'):'Pink Bunny Player';
+  const upcoming=document.getElementById('nextTrack');
+  const nextTitle=connected&&typeof d.nextTitle==='string'?d.nextTitle.trim():'';
+  upcoming.hidden=!nextTitle;
+  upcoming.textContent=nextTitle?'⏭ NEXT · '+nextTitle:'';
+  upcoming.title=nextTitle?'다음 곡: '+nextTitle:'';
+  player.classList.toggle('has-next',!!nextTitle);
   const vid=/^[A-Za-z0-9_-]{11}$/.test(d?.videoId||'')?d.videoId:'';
   if(vid!==shownVideo){shownVideo=vid;cover.removeAttribute('src');cover.style.display=vid?'block':'none';
     if(vid)cover.src='https://i.ytimg.com/vi/'+vid+'/mqdefault.jpg';
