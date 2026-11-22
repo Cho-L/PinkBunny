@@ -167,8 +167,8 @@ func pbTrayLoop() {
     for {
         status, _, _ := pbGetMessage.Call(uintptr(unsafe.Pointer(&msg)), 0, 0, 0)
         if int32(status) <= 0 {break}
-        pbTranslateMessage.Call(uintptr(unsafe.Pointer(&msg))
-        pbDispatchMessage.Call(uintptr(unsafe.Pointer(&msg))
+        pbTranslateMessage.Call(uintptr(unsafe.Pointer(&msg)))
+        pbDispatchMessage.Call(uintptr(unsafe.Pointer(&msg)))
     }
     pbNotifyIcon.Call(pbNIMDelete, uintptr(unsafe.Pointer(&data)))
     runtime.KeepAlive(callback)
