@@ -48,6 +48,12 @@ function applyTheme(config){
  player.style.setProperty('--pb-bg2',rgba(b,config.opacity));
  player.style.setProperty('--pb-accent',accent);
  player.style.setProperty('--pb-scale',String(config.scale/100));
+ const imageScale=Number(config.avatarScale)||100,imageX=Number(config.avatarX)||0,imageY=Number(config.avatarY)||0;
+ if(imageScale>=50&&imageScale<=200&&Math.abs(imageX)<=40&&Math.abs(imageY)<=40){
+  player.style.setProperty('--pb-avatar-scale',String(imageScale/100));
+  player.style.setProperty('--pb-avatar-x',imageX+'px');
+  player.style.setProperty('--pb-avatar-y',imageY+'px');
+ }
  player.classList.toggle('no-animation',!config.animate);
  player.classList.toggle('no-cover',!config.showCover);
  player.classList.remove('layout-classic','layout-compact','layout-cover');
