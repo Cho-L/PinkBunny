@@ -2,7 +2,6 @@ package main
 
 import (
  "bytes"
- "encoding/json"
  "errors"
  "image"
  _ "image/jpeg"
@@ -97,6 +96,3 @@ func (a *avatarService) handler(w http.ResponseWriter,r *http.Request){
  }
 }
 
-// JSON is intentionally kept in the theme endpoint, while avatar bytes use
-// application/octet-stream to avoid user-supplied paths, SVG or HTML content.
-var _ = json.Valid
