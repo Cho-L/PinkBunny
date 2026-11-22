@@ -10,10 +10,24 @@ import (
  "strings"
 )
 
-var pairingPattern=regexp.MustCompile(`^[A-F0-9]{8}$`)
+var pairingPattern=regexp.MustCompile(`^(?:[A-F0-9]{8}|[A-F0-9]{32})package main
 
-// The short pairing code is preserved across restarts so existing Chrome settings work.
-// It is a LAN convenience token, not a substitute for trusted local network isolation.
+import (
+ "crypto/rand"
+ "encoding/hex"
+ "errors"
+ "os"
+ "path/filepath"
+ "regexp"
+ "strings"
+)
+
+)
+
+// Fresh installations receive 128-bit CSPRNG tokens. Preserve historical 8-hex
+// tokens on upgrade so existing 2-PC streams do not unexpectedly disconnect.
+// Legacy tokens are less secure: re-pairing with a new install uses strong codes.
+// Keep pairing credentials on a trusted private network.
 func loadPairingKey()(string,error){
  dir,err:=os.UserConfigDir();if err!=nil{return "",err}
  folder:=filepath.Join(dir,"PinkBunny")
@@ -24,7 +38,7 @@ func loadPairingKey()(string,error){
   if pairingPattern.MatchString(key){return key,nil}
   return "",errors.New("invalid pairing.key; move or delete the file to reset the connection")
  }else if !os.IsNotExist(readErr){return "",readErr}
- random:=make([]byte,4)
+ random:=make([]byte,16)
  if _,err=rand.Read(random);err!=nil{return "",err}
  key:=strings.ToUpper(hex.EncodeToString(random))
  file,err:=os.OpenFile(path,os.O_CREATE|os.O_EXCL|os.O_WRONLY,0600)
