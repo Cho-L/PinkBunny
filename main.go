@@ -5,6 +5,7 @@ import (
  "embed"
  "encoding/hex"
  "encoding/json"
+ "math"
  "fmt"
  "io"
  "log"
@@ -30,6 +31,8 @@ type Update struct {
  Channel string `json:"channel"`
  VideoID string `json:"videoId"`
  Playing bool `json:"playing"`
+ Position float64 `json:"position"`
+ Duration float64 `json:"duration"`
 }
 type Tab struct {
  Update
@@ -43,11 +46,14 @@ type Status struct {
  Channel string `json:"channel"`
  VideoID string `json:"videoId"`
  URL string `json:"url"`
+ Position float64 `json:"position"`
+ Duration float64 `json:"duration"`
 }
 type Store struct {
  sync.Mutex
  tabs map[int]Tab
  lastID int
+ pinnedID int
  listeners map[chan Status]struct{}
  lastJSON string
 }
@@ -58,11 +64,12 @@ func (s *Store) snapshot() Status {
  sort.Slice(all,func(i,j int)bool{return all[i].Seen.After(all[j].Seen)})
  var selected *Tab
  for i:=range all {t:=&all[i];if t.Playing&&(selected==nil||!selected.Playing||t.Activated.After(selected.Activated)){selected=t}}
+ if s.pinnedID>0 {for i:=range all{if all[i].TabID==s.pinnedID{selected=&all[i];break}}}
  if selected==nil {for i:=range all{if all[i].TabID==s.lastID{selected=&all[i];break}}}
  if selected==nil&&len(all)>0{selected=&all[0]}
  if selected==nil{return Status{}}
  s.lastID=selected.TabID
- return Status{true,selected.Playing,selected.Title,selected.Channel,selected.VideoID,selected.URL}
+ return Status{true,selected.Playing,selected.Title,selected.Channel,selected.VideoID,selected.URL,selected.Position,selected.Duration}
 }
 func (s *Store) publish(){
  st:=s.snapshot();b,_:=json.Marshal(st)
@@ -92,6 +99,9 @@ func update(w http.ResponseWriter,r *http.Request,s *Store,remove bool,key strin
   if e!=nil||u.Scheme!="https"||!(u.Hostname()=="www.youtube.com"||u.Hostname()=="music.youtube.com"||u.Hostname()=="youtube.com"){reply(w,400,map[string]string{"error":"Not YouTube"});return}
   p.Title=clip(p.Title,220);if p.Title==""{reply(w,400,map[string]string{"error":"Empty title"});return}
   p.Channel=clip(p.Channel,100);p.VideoID=clip(p.VideoID,25);p.URL=clip(p.URL,350)
+  if math.IsNaN(p.Position)||math.IsInf(p.Position,0)||p.Position<0 {p.Position=0}
+  if math.IsNaN(p.Duration)||math.IsInf(p.Duration,0)||p.Duration<0 {p.Duration=0}
+  if p.Duration>0&&p.Position>p.Duration {p.Position=p.Duration}
   now:=time.Now();old,ok:=s.tabs[p.TabID];active:=old.Activated
   if p.Playing&&(!ok||!old.Playing||old.URL!=p.URL){active=now}
   s.tabs[p.TabID]=Tab{p,now,active}
@@ -139,6 +149,25 @@ func main(){
  mux.HandleFunc("/api/status",func(w http.ResponseWriter,r *http.Request){if r.Method!="GET"{http.Error(w,"Method not allowed",405);return};s.Lock();st:=s.snapshot();s.Unlock();reply(w,200,st)})
  mux.HandleFunc("/api/update",func(w http.ResponseWriter,r *http.Request){update(w,r,s,false,key)})
  mux.HandleFunc("/api/remove",func(w http.ResponseWriter,r *http.Request){update(w,r,s,true,key)})
+
+ mux.HandleFunc("/api/tabs",func(w http.ResponseWriter,r *http.Request){
+  if r.Method!="GET"||!extensionOrigin(r)||r.Header.Get("X-Bunny-Key")!=key{http.Error(w,"Forbidden",403);return}
+  s.Lock();defer s.Unlock()
+  s.snapshot()
+  tabs:=make([]map[string]any,0,len(s.tabs))
+  for _,t:=range s.tabs{tabs=append(tabs,map[string]any{"tabId":t.TabID,"title":t.Title,"playing":t.Playing})}
+  sort.Slice(tabs,func(i,j int)bool{return tabs[i]["tabId"].(int)<tabs[j]["tabId"].(int)})
+  reply(w,200,map[string]any{"tabs":tabs,"pinnedId":s.pinnedID})
+ })
+ mux.HandleFunc("/api/select",func(w http.ResponseWriter,r *http.Request){
+  if r.Method!="POST"||!extensionOrigin(r)||r.Header.Get("X-Bunny-Key")!=key{http.Error(w,"Forbidden",403);return}
+  r.Body=http.MaxBytesReader(w,r.Body,1024)
+  var p struct{TabID int `json:"tabId"`}
+  if json.NewDecoder(r.Body).Decode(&p)!=nil||p.TabID<0 {http.Error(w,"Invalid tab",400);return}
+  s.Lock();defer s.Unlock()
+  if p.TabID>0 {if _,ok:=s.tabs[p.TabID];!ok{http.Error(w,"Tab not found",404);return}}
+  s.pinnedID=p.TabID;s.publish();reply(w,200,map[string]bool{"ok":true})
+ })
  mux.HandleFunc("/events",func(w http.ResponseWriter,r *http.Request){
   if r.Method!="GET"{http.Error(w,"Method not allowed",405);return}
   f,ok:=w.(http.Flusher);if !ok{http.Error(w,"Streaming unavailable",500);return}
