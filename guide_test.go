@@ -13,9 +13,17 @@ func TestIllustratedInstallationGuidesAreEmbedded(t *testing.T){
   "guide-quickstart-2pc.svg",
   "guide-chrome-extension.svg",
   "guide-obs-source.svg",
+  "guide-feature-extension.svg",
+  "guide-feature-tabs.svg",
+  "guide-feature-controls.svg",
+  "guide-feature-design.svg",
+  "guide-feature-remote.svg",
+  "guide-feature-filters.svg",
+  "guide-feature-troubleshoot.svg",
  }
  guide,err:=assets.ReadFile("overlay/guide.html")
  if err!=nil{t.Fatal(err)}
+ if !strings.Contains(string(guide),"id=\"features\"")||!strings.Contains(string(guide),"기능 사용"){t.Fatal("feature guide must be discoverable from offline manual")}
  if !strings.Contains(string(guide),"송출 PC")||!strings.Contains(string(guide),"127.0.0.1:38765"){
   t.Fatal("offline guide must identify correct streaming PC and OBS address")
  }
