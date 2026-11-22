@@ -185,6 +185,11 @@
     });
     if(!r.ok)throw Error('명령 상태 조회에 실패했습니다.');
     const report=await r.json();
+    if(report.state==='queued'){
+     result.textContent='⌛ 명령이 대기열에 있어요. 음악 PC 연결을 확인하는 중…';
+    }else if(report.state==='delivered'){
+     result.textContent='⌛ 음악 PC가 명령을 받았어요. 유튜브 실행 응답을 기다리는 중…';
+    }
     if(report.state==='success'){
      result.textContent='✅ 음악 PC Chrome에서 명령 처리를 확인했습니다. 실제 영상 화면도 확인해 주세요.';
      return;
