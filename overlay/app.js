@@ -50,6 +50,8 @@ function applyTheme(config){
  player.style.setProperty('--pb-scale',String(config.scale/100));
  player.classList.toggle('no-animation',!config.animate);
  player.classList.toggle('no-cover',!config.showCover);
+ player.classList.remove('layout-classic','layout-compact','layout-cover');
+ player.classList.add('layout-'+(['classic','compact','cover'].includes(config.layout)?config.layout:'classic'));
 }
 async function refreshTheme(){
  try{
@@ -63,3 +65,31 @@ window.addEventListener('message',event=>{
 });
 refreshTheme();
 if(!demo)setInterval(refreshTheme,2000);
+
+const customAvatar=document.getElementById('customAvatar');
+let avatarVersion=null;
+async function refreshAvatar(){
+ try{
+  const r=await fetch('/api/avatar/info',{cache:'no-store'});
+  if(!r.ok)return;
+  const data=await r.json();
+  const next=data.present?String(data.version):'none';
+  if(avatarVersion===next)return;
+  avatarVersion=next;
+  if(data.present){
+   customAvatar.hidden=false;
+   customAvatar.src='/api/avatar?v='+encodeURIComponent(data.version);
+   player.classList.add('has-avatar');
+  }else{
+   customAvatar.hidden=true;
+   customAvatar.removeAttribute('src');
+   player.classList.remove('has-avatar');
+  }
+ }catch{}
+}
+customAvatar.addEventListener('error',()=>{customAvatar.hidden=true;player.classList.remove('has-avatar')});
+refreshAvatar();
+setInterval(refreshAvatar,2000);
+window.addEventListener('message',event=>{
+ if(event.origin===location.origin&&event.data?.type==='pink-bunny-avatar-refresh')refreshAvatar();
+});
