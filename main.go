@@ -126,6 +126,7 @@ func main(){
  key:=strings.ToUpper(hex.EncodeToString(random))
  s:=&Store{tabs:map[int]Tab{},listeners:map[chan Status]struct{}{}}
  mux:=http.NewServeMux()
+ registerExtras(mux)
  mux.HandleFunc("/api/pair",func(w http.ResponseWriter,r *http.Request){
   if !isLocal(r){http.Error(w,"Local access only",403);return}
   if r.Method!="GET"{http.Error(w,"Method not allowed",405);return}
@@ -156,7 +157,7 @@ func main(){
  })
  mux.HandleFunc("/",func(w http.ResponseWriter,r *http.Request){
   if r.Method!="GET"{http.Error(w,"Method not allowed",405);return}
-  names:=map[string]string{"/":"index.html","/index.html":"index.html","/app.js":"app.js","/style.css":"style.css"}
+  names:=map[string]string{"/":"index.html","/index.html":"index.html","/app.js":"app.js","/style.css":"style.css","/setup-extra.js":"setup-extra.js"}
   name,ok:=names[r.URL.Path];if !ok{http.NotFound(w,r);return}
   bytes,err:=assets.ReadFile("overlay/"+name);if err!=nil{http.Error(w,"Asset missing",500);return}
   switch{case strings.HasSuffix(name,".html"):w.Header().Set("Content-Type","text/html; charset=utf-8");case strings.HasSuffix(name,".js"):w.Header().Set("Content-Type","application/javascript");case strings.HasSuffix(name,".css"):w.Header().Set("Content-Type","text/css")}
@@ -171,14 +172,14 @@ func main(){
   if r.Method=="OPTIONS"{w.WriteHeader(204);return};mux.ServeHTTP(w,r)
  })
  ln,err:=net.Listen("tcp","0.0.0.0:38765")
- if err!=nil{fmt.Fprintln(os.Stderr,"Port 38765 is in use:",err);return}
+ if err!=nil{fmt.Fprintln(os.Stderr,"Port 38765 is in use:",err);openBrowser("http://127.0.0.1:38765/setup");return}
  fmt.Println("🐰 Pink Bunny | OBS: http://127.0.0.1:38765")
  fmt.Println("Connection code:",key)
  for _,ip:=range localIPs(){fmt.Println("Streaming PC IPv4:",ip)}
  fmt.Println("Setup guide: http://127.0.0.1:38765/setup")
  fmt.Println("Keep this window open. Close it to stop.")
  go func(){tick:=time.NewTicker(4*time.Second);defer tick.Stop();for range tick.C{s.Lock();s.publish();s.Unlock()}}()
- go func(){time.Sleep(350*time.Millisecond);openBrowser("http://127.0.0.1:38765/setup")}()
+ if len(os.Args)<2||os.Args[1]!="--silent"{go func(){time.Sleep(350*time.Millisecond);openBrowser("http://127.0.0.1:38765/setup")}()}
  log.Fatal(http.Serve(ln,handler))
 }
 func mustInterfaceAddrs()[]net.Addr{a,_:=net.InterfaceAddrs();return a}
