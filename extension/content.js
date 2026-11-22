@@ -83,22 +83,33 @@
         case 'previous':
         case 'next':{
           const isNext=message.action==='next';
-          // YouTube Music has shipped several player-bar layouts. Prefer
-          // native controls rather than guessing the next recommended video.
-          const selectors=isNext
-            ? ['ytmusic-player-bar .next-button','ytmusic-app-layout .next-button',
-               'ytmusic-player-page .next-button','button.ytp-next-button']
-            : ['ytmusic-player-bar .previous-button','ytmusic-app-layout .previous-button',
-               'ytmusic-player-page .previous-button','button.ytp-prev-button'];
-          const button=selectors.map(sel=>document.querySelector(sel))
-            .find(el=>el&&!el.disabled&&el.getAttribute?.('aria-disabled')!=='true'
-              &&(!el.getClientRects||el.getClientRects().length>0));
+          // YouTube's transport control can be an <a>, not a <button>.
+          // YouTube Music also uses custom buttons in multiple player layouts.
+          // Select only native player controls: never click a suggested video.
+          const selectors=location.hostname==='music.youtube.com'
+            ? (isNext
+              ? ['ytmusic-player-bar .next-button','ytmusic-player-bar #next-button',
+                 '#next-button.ytmusic-player-bar','ytmusic-app-layout ytmusic-player-bar .next-button',
+                 'ytmusic-player-page .next-button']
+              : ['ytmusic-player-bar .previous-button','ytmusic-player-bar #previous-button',
+                 '#previous-button.ytmusic-player-bar','ytmusic-app-layout ytmusic-player-bar .previous-button',
+                 'ytmusic-player-page .previous-button'])
+            : (isNext
+              ? ['#movie_player .ytp-next-button','.ytp-next-button']
+              : ['#movie_player .ytp-prev-button','.ytp-prev-button']);
+          const candidates=selectors.map(selector=>document.querySelector(selector)).filter(Boolean);
+          const button=candidates.find(el=>!el.disabled
+            && el.getAttribute?.('aria-disabled')!=='true'
+            && (!el.getClientRects||el.getClientRects().length>0));
           if(!button){
-            sendResponse({ok:false,error:'이 유튜브 화면에서 '+(isNext?'다음':'이전')+
-              ' 버튼을 찾을 수 없습니다. 재생목록을 재생하거나 유튜브의 해당 버튼이 보이는지 확인해 주세요.'});
+            const label=isNext?'다음':'이전';
+            sendResponse({ok:false,error:candidates.length
+              ?'유튜브 '+label+' 버튼이 현재 숨겨져 있거나 비활성화되어 있어요. 재생목록·플레이어 상태를 확인해 주세요.'
+              :'현재 플레이어에서 '+label+' 버튼을 찾지 못했습니다. 유튜브에서 실제 버튼이 보이는지 확인해 주세요. 보이는데도 실패하면 Pink Bunny에 알려주세요.'});
             return;
           }
           button.click();
+          // This acknowledges a native button click, not a verified track change.
           sendResponse({ok:true,action:message.action});
           setTimeout(read,150);
           return;
