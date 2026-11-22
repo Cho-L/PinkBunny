@@ -1,4 +1,19 @@
-## v12.0.0 broadcasting readiness and remote command acknowledgements (2026-11-22)
+# 🧪 Pink Bunny 검증 보고서
+
+현재 검증 대상: **v12.0.0 Beta · 2026-11-22**  
+최신 Windows 검증 실행: [GitHub Actions #45025380401](https://github.com/Cho-L/PinkBunny/actions/runs/45025380401)
+
+**검증 범위 구분:** Go 단위·API 보안 테스트, JavaScript 모의 브라우저 테스트, Windows 실행 파일·설치 패키지 자동 빌드는 확인했습니다. **실제 Windows Chrome + YouTube/YouTube Music + OBS 및 물리적인 두 PC 연결을 통한 통합 테스트는 수행되지 않았습니다.** 따라서 자동 빌드 성공을 실사용 환경에서의 모든 기능 정상 동작 보증으로 표현하지 않습니다.
+
+| 구분 | 현재 자동 검증 | 별도 실제 환경 검증 |
+| --- | --- | --- |
+| 서버·보안·진단 API | 테스트 및 Windows 실행 파일 응답 확인 | 방화벽·백신·사설망 설정 |
+| Chrome 확장 동작 | JavaScript 모의 환경 회귀 테스트 | Chrome 권한 요청·팝업·YouTube 실제 화면 |
+| 원격 제어 실행 응답 | 명령 접수·전달·ACK·실패·시간 초과 검증 | 실제 유튜브 재생·이전/다음·탭 변경 |
+| OBS 위젯·오디오 | 서버 URL·가이드 응답 스모크 테스트 | 브라우저 소스 렌더링·오디오 캡처·애니메이션 |
+| 설치 및 배포 | Inno Setup 컴파일·ZIP·베타 릴리스 업로드 | 일반 사용자 설치·업데이트·제거 |
+
+## v12.0.0 — 방송 준비 진단 및 원격 명령 처리 결과 (2026-11-22)
 
 - **Diagnostics:** The local setup page calls `GET /api/diagnostics` and distinguishes server readiness, fresh extension requests (last 12 seconds), and recent YouTube media data from **manual checks** for OBS browser source and broadcast audio. It never claims that an OBS source or its audio was validated without an actual OBS connection.
 - **Command lifecycle:** Each queued `POST /api/control` returns a random ID; `GET /api/control/result?id=...` on the streaming PC observes `queued -> delivered -> success/failed/timeout`. Queued commands time out after 15 seconds; commands without an execution acknowledgement time out 12 seconds after delivery. Old results are evicted after two minutes.
@@ -21,11 +36,13 @@
 
 ---
 
-# Pink Bunny QA report — v11.0.1 (2026-11-22)
+## 이전 검증 기록: v11.0.1 (2026-11-22)
+
+> **과거 버전 기록입니다. 현재 사용 설명으로 적용하지 마세요.** 이후 v11.3의 LAN 접근 제한과 v12.0의 원격 명령 결과 회신으로 일부 제한이 변경됐습니다. 현재 안내는 위의 v12.0·v11.3 항목을 우선하세요.
 
 ## Scope and evidence
 
-This pass reviews the Windows Go server, setup wizard, OBS browser source, Chrome Manifest V3 extension, media filtering, player commands, pairing and image settings. GitHub Actions runs the automated checks on every main-branch push.
+v11.0.1 당시의 Go 서버·설치 도우미·OBS 위젯·Chrome 확장 프로그램·연결·재생 제어 점검 기록입니다. 현재 자동화 테스트는 v12.0.0의 진단·ACK 항목까지 확장됐습니다.
 
 ## Issues fixed in this pass
 
@@ -56,12 +73,12 @@ These tests **cannot be called passed** based solely on code review or a GitHub 
 5. OBS: verify layout dimensions, animated GIF/WebP, avatar position, song-transition animation, and appropriate behavior when streams disconnect.
 6. Windows: check native notification icon, clean exit, auto-start, installer upgrade and uninstall with existing settings.
 
-## Known limitations
+## v11.0.1 당시의 제한 사항 (최신 버전과 다를 수 있음)
 
 - Chrome's built-in extension popup closing on focus loss is normal browser behavior. Use the full-tab dashboard for a persistent UI.
 - The next-track label is shown only when the next entry is detectable in the visible playlist/queue. Recommendations aren't guaranteed playback order.
-- Local filtering hides information from the OBS widget but does not erase browser history or secure the LAN status endpoint from other local-network devices.
-- Remote-control enqueue success does not guarantee the target YouTube player executed the command. That acknowledgement remains future work.
+- **v11.0.1 당시:** 로컬 필터는 OBS 표시에서만 정보를 숨겼고, LAN 상태 정보 노출 제한은 아직 도입되지 않았습니다. **현재 v12.0.0에서는 v11.3부터 송출 PC 외부의 상태·OBS 페이지 접근을 차단합니다.**
+- **v11.0.1 당시:** 명령 접수만 확인하고 실행 결과를 받지 못했습니다. **현재 v12.0.0에서는 Chrome 명령 처리 결과를 회신합니다.** 단 실제 OBS 오디오 송출이나 YouTube 화면의 변화까지 보장하지는 않습니다.
 - The app currently has no automatic updater and has not been code-signed.
 
 ## How to report bugs
