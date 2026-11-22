@@ -1,9 +1,7 @@
 package main
 
 import (
- "crypto/rand"
  "embed"
- "encoding/hex"
  "encoding/json"
  "math"
  "fmt"
@@ -132,8 +130,7 @@ func openBrowser(address string) {
  _=command.Start()
 }
 func main(){
- random:=make([]byte,4);if _,err:=rand.Read(random);err!=nil{log.Fatal(err)}
- key:=strings.ToUpper(hex.EncodeToString(random))
+ key,err:=loadPairingKey();if err!=nil{log.Fatal("Pairing configuration: ",err)}
  s:=&Store{tabs:map[int]Tab{},listeners:map[chan Status]struct{}{}}
  mux:=http.NewServeMux()
  registerExtras(mux)
@@ -210,7 +207,8 @@ func main(){
  fmt.Println("Connection code:",key)
  for _,ip:=range localIPs(){fmt.Println("Streaming PC IPv4:",ip)}
  fmt.Println("Setup guide: http://127.0.0.1:38765/setup")
- fmt.Println("Keep this window open. Close it to stop.")
+ fmt.Println("Pink Bunny is running. Use the Windows tray menu to exit.")
+ runTray()
  go func(){tick:=time.NewTicker(4*time.Second);defer tick.Stop();for range tick.C{s.Lock();s.publish();s.Unlock()}}()
  if len(os.Args)<2||os.Args[1]!="--silent"{go func(){time.Sleep(350*time.Millisecond);openBrowser("http://127.0.0.1:38765/setup")}()}
  log.Fatal(http.Serve(ln,handler))
