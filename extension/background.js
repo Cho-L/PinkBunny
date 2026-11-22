@@ -6,6 +6,17 @@ function validServerHost(host){
  const [a,b]=parts.map(Number);
  return a===10||(a===172&&b>=16&&b<=31)||(a===192&&b===168);
 }
+// Reconnect command receivers in YouTube tabs that predate an extension update.
+async function sendYouTubeCommand(tabId,action){
+ const message={type:'pinkbunny-player-command',action};
+ try{
+  return await chrome.tabs.sendMessage(tabId,message);
+ }catch(error){
+  if(!/Receiving end does not exist|Could not establish connection/i.test(String(error?.message||error||'')))throw error;
+  await chrome.scripting.executeScript({target:{tabId},files:['content.js']});
+  return await chrome.tabs.sendMessage(tabId,message);
+ }
+}
 let polling=false,lastPoll=0;
 async function reportCommand(host,key,command,outcome){
  if(!command.id)return; // Older streaming-PC builds did not issue IDs.
@@ -43,9 +54,7 @@ async function pollControls(host,key){
     }catch{}
     if(!valid)outcome={ok:false,error:'대상 탭이 더 이상 YouTube 페이지가 아닙니다.'};
     else{
-     const answer=await chrome.tabs.sendMessage(command.tabId,{
-      type:'pinkbunny-player-command',action:command.action
-     });
+     const answer=await sendYouTubeCommand(command.tabId,command.action);
      outcome=answer?.ok===true?{ok:true}:{ok:false,error:answer?.error||'유튜브 탭에서 실행 응답을 받지 못했습니다.'};
     }
    }
