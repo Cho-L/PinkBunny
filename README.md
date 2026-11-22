@@ -1,12 +1,12 @@
 # 🐰 Pink Bunny · OBS용 유튜브 음악 정보 위젯
 
-**Windows 무료 베타 · v11.1.0 · 회원가입 불필요**
+**Windows 무료 베타 · v11.2.0 · 회원가입 불필요**
 
 Pink Bunny는 Chrome에서 재생하는 **YouTube / YouTube Music 영상의 제목·채널·썸네일·재생 시간**을 OBS 브라우저 소스에 표시하는 프로그램입니다. **음악 소리를 송출하거나 음원을 분석하는 프로그램은 아닙니다.**
 
 ![송출 PC에서 음악을 재생할 때 Pink Bunny 설치 순서](overlay/guide-quickstart-1pc.svg)
 
-**[📥 최신 Windows 설치 파일 다운로드](https://github.com/Cho-L/PinkBunny/releases/tag/beta)** · [📘 그림 설치 안내](overlay/guide-quickstart-1pc.svg) · [📰 게시글용 소개](POST_KO.md)
+**[📥 최신 Windows 설치 파일 다운로드](https://github.com/Cho-L/PinkBunny/releases/tag/beta)** · [📘 설치 그림 안내](overlay/guide.html#install) · [✨ 기능 사용 그림 7장](overlay/guide.html#features) · [📰 게시글용 소개](POST_KO.md)
 
 ## 🎵 핵심 기능
 
@@ -35,6 +35,20 @@ Pink Bunny는 Chrome에서 재생하는 **YouTube / YouTube Music 영상의 제�
 설치 도우미가 열리지 않으면 송출 PC에서 `http://127.0.0.1:38765/setup`에 접속하세요. 확장 프로그램 설정이 클릭 중 닫히면 **↗ 큰 화면에서 설정**을 이용하세요.
 
 **참고:** 개발자 모드로 확장 프로그램을 수동 등록하는 방식이며, 현재 Chrome 웹 스토어에서 원클릭 설치하는 방식은 아닙니다.
+
+### ✨ 기능별 그림 사용 가이드
+
+설치가 끝났다면 **[기능별 그림 가이드 7장 보기](overlay/guide.html#features)**를 열어 보세요. 설치 도우미 및 Chrome 확장 프로그램에도 **그림 사용법 버튼**이 추가되었습니다.
+
+- [Chrome 확장 프로그램 기본 조작](overlay/guide-feature-extension.svg)
+- [OBS 표시 탭 고정·숨김](overlay/guide-feature-tabs.svg)
+- [영상 재생 제어](overlay/guide-feature-controls.svg)
+- [디자인·캐릭터 꾸미기](overlay/guide-feature-design.svg)
+- [1컴·2컴 원격 제어](overlay/guide-feature-remote.svg)
+- [광고·Shorts 스마트 필터](overlay/guide-feature-filters.svg)
+- [연결·OBS·오디오 문제 해결](overlay/guide-feature-troubleshoot.svg)
+
+자세한 주의사항과 기능별 순서는 **[한국어 기능 사용 설명서](FEATURE_GUIDE_KO.md)**를 참고하세요. 그림은 이해를 돕는 UI 예시이며 실제 화면 캡처가 아닙니다.
 
 ### 🖼️ 그림으로 따라 하는 설치
 
@@ -65,6 +79,7 @@ Windows 설치 후 **시작 메뉴 → Pink Bunny 그림 설치 가이드**를 �
 
 ## 📚 문서·개발
 
+- [✨ 기능 사용 설명서](FEATURE_GUIDE_KO.md)
 - [📢 커뮤니티 게시글용 요약](POST_KO.md)
 - [📜 버전별 변경 기록](CHANGELOG.md)
 - [🧪 QA 검증 범위](QA_REPORT.md)
