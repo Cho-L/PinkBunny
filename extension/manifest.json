@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Pink Bunny - YouTube Now Playing",
-  "version": "9.0.0",
-  "description": "YouTube Now Playing for OBS: current-tab pin, privacy hide, thumbnail, timeline, 1-PC and 2-PC.",
+  "version": "10.0.0",
+  "description": "YouTube OBS now-playing overlay with smart ad/Shorts filters, transport control and 2-PC remote commands.",
   "permissions": [
     "tabs",
     "storage"
