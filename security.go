@@ -21,7 +21,7 @@ func validServerHost(hostport string) bool {
 // OBS status, media artwork, SSE, setup, or local settings to the LAN.
 func remoteExtensionEndpoint(path string)bool {
  switch path {
- case "/api/update","/api/remove","/api/tabs","/api/select","/api/visibility","/api/commands":
+ case "/api/update","/api/remove","/api/tabs","/api/select","/api/visibility","/api/commands","/api/command-result":
   return true
  }
  return false
