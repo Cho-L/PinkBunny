@@ -189,7 +189,7 @@ func main(){
   if json.NewDecoder(r.Body).Decode(&request)!=nil||!validPlayerAction(request.Action){http.Error(w,"Invalid action",400);return}
   s.Lock();defer s.Unlock()
   tabID:=request.TabID
-  if tabID==0 {selected:=s.snapshot();for _,t:=range s.tabs{if t.VideoID==selected.VideoID&&t.Title==selected.Title&&selected.Connected&&t.TabID==s.lastID{tabID=t.TabID;break}}}
+  if tabID==0 {selected:=s.snapshot();if selected.Connected{tabID=s.lastID}}
   tab,ok:=s.tabs[tabID]
   if !ok||s.hidden[tabID]||tab.Suppressed {reply(w,409,map[string]string{"error":"No controllable video; play YouTube and choose a visible tab"});return}
   if len(s.commands)>=10{reply(w,429,map[string]string{"error":"Too many pending commands"});return}
