@@ -24,6 +24,8 @@
 
 처음 설치하는 분을 위한 **그림 설치 가이드**와, 설치 후 탭 고정·재생 제어·캐릭터 꾸미기 등을 따라 할 수 있는 **기능별 그림 사용 가이드 7장**을 함께 제공합니다.
 
+**📘 설치·기능 그림 한눈에 보기:** https://github.com/Cho-L/PinkBunny/blob/main/GUIDE.md
+
 ### 📥 다운로드
 **Windows 무료 베타:** https://github.com/Cho-L/PinkBunny/releases/tag/beta
 
