@@ -1,3 +1,14 @@
+## v12.0.0 broadcasting readiness and remote command acknowledgements (2026-11-22)
+
+- **Diagnostics:** The local setup page calls `GET /api/diagnostics` and distinguishes server readiness, fresh extension requests (last 12 seconds), and recent YouTube media data from **manual checks** for OBS browser source and broadcast audio. It never claims that an OBS source or its audio was validated without an actual OBS connection.
+- **Command lifecycle:** Each queued `POST /api/control` returns a random ID; `GET /api/control/result?id=...` on the streaming PC observes `queued -> delivered -> success/failed/timeout`. Queued commands time out after 15 seconds; commands without an execution acknowledgement time out 12 seconds after delivery. Old results are evicted after two minutes.
+- **Execution reports:** The music PC sends authenticated `POST /api/command-result` containing command ID, tab ID and execution outcome. Wrong-tab, duplicate, missing and unauthenticated results are rejected. The result endpoint is allowed across LAN only for paired Chrome extensions; reading results and diagnostics remains streaming-PC-local.
+- **Browser play promise:** Playback start now waits for the YouTube video `play()` promise. Browser rejection returns failure instead of misleading success.
+- **Limitations:** A success confirms the Chrome content script accepted/executed the request, not necessarily a visible player state transition, OBS audio reception or copyright permission. Network drops produce a timeout, not false success. Real Chrome/OBS/2-PC integration remains unverified.
+- **Tests:** Go lifecycle/auth/timeout/diagnostics and remote-policy tests; Node extension send/ack and autoplay rejection tests; Windows EXE smoke test includes diagnostics and bundled guides.
+
+---
+
 ## v11.3.0 security / connection stabilization (2026-11-22)
 
 - **Default pairing:** New installations generate 32 hexadecimal characters (128 bits) with crypto/rand. **Existing 8-character pairing codes remain unchanged** to avoid disconnecting existing two-PC users; these legacy codes are weaker.
