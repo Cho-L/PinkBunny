@@ -185,6 +185,25 @@ document.getElementById('unpin').onclick=async()=>{
 };
 refreshCurrentTab();
 
+// Chrome does not inject a new content script into tabs that were already
+// open when an unpacked extension is updated or reloaded. Recover on demand.
+function missingControlReceiver(error){
+ return /Receiving end does not exist|Could not establish connection/i.test(String(error?.message||error||''));
+}
+async function sendToYouTubeTab(tabId,action){
+ const message={type:'pinkbunny-player-command',action};
+ try{
+  return await chrome.tabs.sendMessage(tabId,message);
+ }catch(error){
+  if(!missingControlReceiver(error))throw error;
+  await chrome.scripting.executeScript({
+   target:{tabId},
+   files:['content.js']
+  });
+  // Retry only once; errors from blocked site permissions are reported.
+  return await chrome.tabs.sendMessage(tabId,message);
+ }
+}
 const controlStatus=document.getElementById('controlStatus');
 async function executeLocalControl(action){
  controlStatus.textContent='⌛ 유튜브 탭과 연결하는 중…';
@@ -202,7 +221,7 @@ async function executeLocalControl(action){
  }
  controlStatus.textContent='⌛ '+(target.title||'YouTube').slice(0,36)+' 탭에 명령 전송 중…';
  try{
-  const r=await chrome.tabs.sendMessage(target.id,{type:'pinkbunny-player-command',action});
+  const r=await sendToYouTubeTab(target.id,action);
   if(!r?.ok){
    controlStatus.textContent='❌ '+(r?.error||'유튜브에서 제어 응답이 없습니다. 영상 탭을 새로고침해 주세요.');
    return;
@@ -217,7 +236,14 @@ async function executeLocalControl(action){
    controlStatus.textContent='✅ 유튜브 재생/일시정지 명령을 처리했어요.';
   }
  }catch(e){
-  controlStatus.textContent='❌ 확장 프로그램이 이 유튜브 탭과 통신하지 못했습니다. chrome://extensions에서 확장 프로그램을 새로고침한 뒤 유튜브 페이지도 새로고침해 주세요.';
+  const message=String(e?.message||e||'');
+  if(/Cannot access contents|Cannot access a chrome|permissions|not permitted/i.test(message)){
+   controlStatus.textContent='❌ Chrome에서 유튜브 탭 접근을 허용하지 않았습니다. chrome://extensions → Pink Bunny → 사이트 액세스에서 YouTube와 YouTube Music 접근을 허용해 주세요.';
+  }else if(missingControlReceiver(e)){
+   controlStatus.textContent='❌ 자동 연결 복구에 실패했습니다. 유튜브 탭을 새로고침하고 다시 시도해 주세요.';
+  }else{
+   controlStatus.textContent='❌ 유튜브 탭 제어 오류: '+message.slice(0,160)+' · 유튜브 탭을 새로고침한 뒤 다시 시도해 주세요.';
+  }
  }
 }
 for(const button of document.querySelectorAll('[data-control]')){
