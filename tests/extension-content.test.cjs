@@ -13,12 +13,14 @@ function setup(){
  const video={duration:120,currentTime:12,paused:false,ended:false,readyState:4,volume:0.5,play(){this.paused=false;return Promise.resolve()},pause(){this.paused=true}};
  const nodes=[mockItem('Playing','Artist',true),mockItem('  Next   Song  ','Next Artist')];
  let ad=false;
+ let musicControl=null;
  const playlist={querySelectorAll:()=>nodes};
  const doc={title:'Current Song - YouTube',
  querySelector(selector){
   if(selector==='video.html5-main-video'||selector==='video')return video;
   if(selector==='ytd-playlist-panel-renderer')return playlist;
   if(selector.includes('ad-showing'))return ad?{}:null;
+  if(selector==='ytmusic-app-layout .next-button'||selector==='ytmusic-app-layout .previous-button')return musicControl;
   if(selector.includes('h1.ytd-watch-metadata'))return {textContent:'Current Song'};
   return null; },
  addEventListener(){} };
@@ -27,7 +29,7 @@ function setup(){
  runtime:{sendMessage(data){messages.push(data);return Promise.resolve()},onMessage:{addListener(fn){listeners.message=fn}}}};
  const ctx={document:doc,location:page,chrome,URL,setInterval(fn){intervals.push(fn)},setTimeout(fn){return 1},window:{addEventListener(){}}};
  vm.runInNewContext(content,ctx,{timeout:2000,filename:'extension/content.js'});
- return {messages,intervals,listeners,video,nodes,page,setAd(v){ad=v}};
+ return {messages,intervals,listeners,video,nodes,page,setAd(v){ad=v},setMusicControl(v){musicControl=v}};
 }
 test('playlist next title and byline come from the item immediately after selected',async()=>{
  const m=setup();await Promise.resolve();m.intervals[0]();
@@ -81,4 +83,44 @@ test('autoplay rejection is reported to the streaming PC as a failed command',as
  await new Promise(resolve=>setImmediate(resolve));
  assert.equal(result?.ok,false);
  assert.match(result?.error||'',/NotAllowedError/);
+});
+
+test('volume down returns the actual volume percentage and volume up unmutes',()=>{
+ const m=setup();
+ let response;
+ m.listeners.message({type:'pinkbunny-player-command',action:'volumeDown'},null,r=>response=r);
+ assert.equal(response.ok,true);
+ assert.equal(response.volumePercent,40);
+ assert.equal(m.video.volume,0.4);
+ m.video.muted=true;
+ m.listeners.message({type:'pinkbunny-player-command',action:'volumeUp'},null,r=>response=r);
+ assert.equal(response.ok,true);
+ assert.equal(response.volumePercent,50);
+ assert.equal(response.muted,false);
+ assert.equal(m.video.muted,false);
+});
+test('at maximum or minimum volume the player does not falsely report successful adjustment',()=>{
+ const m=setup();
+ let response;
+ m.video.volume=1;
+ m.video.muted=false;
+ m.listeners.message({type:'pinkbunny-player-command',action:'volumeUp'},null,r=>response=r);
+ assert.equal(response.ok,false);
+ assert.match(response.error,/최대 음량/);
+ m.video.volume=0;
+ m.listeners.message({type:'pinkbunny-player-command',action:'volumeDown'},null,r=>response=r);
+ assert.equal(response.ok,false);
+ assert.match(response.error,/최소 음량/);
+});
+test('next video only claims button press when an enabled YouTube Music transport exists',()=>{
+ const m=setup();
+ let response;
+ m.listeners.message({type:'pinkbunny-player-command',action:'next'},null,r=>response=r);
+ assert.equal(response.ok,false);
+ assert.match(response.error,/다음 버튼을 찾을 수 없습니다/);
+ let clicked=0;
+ m.setMusicControl({disabled:false,getAttribute:()=>null,getClientRects:()=>[{}],click(){clicked++}});
+ m.listeners.message({type:'pinkbunny-player-command',action:'next'},null,r=>response=r);
+ assert.equal(response.ok,true);
+ assert.equal(clicked,1);
 });
