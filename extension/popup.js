@@ -9,7 +9,7 @@ if(fullPage){
 function validHost(host){
  if(host==='localhost')return true;
  const parts=host.split('.');
- return parts.length===4&&parts.every(part=>/^\\d{1,3}$/.test(part)&&Number(part)>=0&&Number(part)<=255);
+ return parts.length===4&&parts.every(part=>/^\d{1,3}$/.test(part)&&Number(part)>=0&&Number(part)<=255);
 }
 const server=document.getElementById('server'),key=document.getElementById('key'),status=document.getElementById('status'),pair=document.getElementById('pair');
 chrome.storage.local.get(['server','key']).then(async s=>{
