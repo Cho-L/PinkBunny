@@ -30,6 +30,7 @@ jobs:
           node --test tests/extension-content.test.cjs tests/background.test.cjs tests/popup.test.cjs tests/docs.test.cjs
           node --check overlay/app.js
           node --check overlay/theme-settings.js
+          node --check overlay/setup-extra.js
           Get-Content extension/manifest.json -Raw | ConvertFrom-Json | Out-Null
           go build -trimpath -ldflags="-s -w -H=windowsgui" -o PinkBunny.exe .
       - name: Smoke-test packaged Windows app and setup endpoints
@@ -51,6 +52,12 @@ jobs:
             if (-not $theme.color) { throw "Theme endpoint returned invalid data" }
             $avatar = Invoke-RestMethod -Uri "http://127.0.0.1:38765/api/avatar/info" -TimeoutSec 3
             if ($null -eq $avatar.present) { throw "Avatar info response missing" }
+            $diagnostics = Invoke-RestMethod -Uri "http://127.0.0.1:38765/api/diagnostics" -TimeoutSec 3
+            if ($diagnostics.checks.Count -ne 5) { throw "Readiness diagnostics must contain 5 checks" }
+            $manual = @($diagnostics.checks | Where-Object { $_.state -eq "manual" })
+            if ($manual.Count -ne 2) { throw "OBS and audio checks must be explicitly manual" }
+            $remoteResult = Invoke-WebRequest -Uri "http://127.0.0.1:38765/api/control/result?id=000000000000000000000000" -SkipHttpErrorCheck -TimeoutSec 3
+            if ($remoteResult.StatusCode -ne 404) { throw "Unknown remote command ID should not appear successful" }
             $setup = (Invoke-WebRequest -Uri "http://127.0.0.1:38765/setup" -TimeoutSec 3).Content
             if (-not $setup.Contains("Pink Bunny")) { throw "Setup wizard unavailable" }
             $guide = (Invoke-WebRequest -Uri "http://127.0.0.1:38765/guide" -TimeoutSec 3).Content
