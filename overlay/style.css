@@ -6,3 +6,19 @@
 .player.no-animation .ears,.player.no-animation .note{animation:none!important}
 .player.no-cover #cover{display:none!important}
 .player.no-cover .rabbit{position:relative!important;bottom:auto!important;right:auto!important;transform:none!important;filter:none!important}
+
+/* v6 layout and user character image */
+#customAvatar{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:3}
+#customAvatar[hidden]{display:none!important}
+.player.has-avatar .rabbit{display:none!important}
+.player.has-avatar #cover{display:none!important}
+.player.layout-compact{height:84px;padding:8px 14px;gap:9px}
+.player.layout-compact .art{width:55px;min-width:55px;height:56px}
+.player.layout-compact .rabbit{transform:scale(.73);transform-origin:top left}
+.player.layout-compact .eyebrow{font-size:9px}
+.player.layout-compact .marquee{margin-top:2px}
+.player.layout-compact .bar{margin-top:4px}
+.player.layout-cover .art{width:96px;min-width:96px;height:94px}
+.player.layout-cover{height:118px;gap:15px}
+.player.layout-cover .marquee{margin-top:8px}
+.player.layout-cover .rabbit{margin:auto}
