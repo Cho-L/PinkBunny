@@ -28,3 +28,38 @@ const demo=new URLSearchParams(location.search).has('demo');
 if(demo){render({connected:true,playing:true,title:'Pink Bunny · 유튜브 Now Playing 미리보기',channel:'YouTube',position:48,duration:205,videoId:''})}
 else{const es=new EventSource('/events');es.onmessage=e=>{try{render(JSON.parse(e.data))}catch{}}}
 setInterval(updateClock,200);
+
+
+const pbThemes={
+ pink:['#fff0f8','#ffc6e2','#d36b9f'],
+ purple:['#f3eaff','#d7bbf7','#9b78c6'],
+ mint:['#e6fff7','#a8e9d7','#4caa94'],
+ peach:['#fff1e5','#ffd0b7','#df8b68']
+};
+let themeConfig=null;
+function applyTheme(config){
+ if(!config||!pbThemes[config.color])return;
+ if(!Number.isFinite(config.opacity)||config.opacity<20||config.opacity>100)return;
+ if(!Number.isFinite(config.scale)||config.scale<75||config.scale>100)return;
+ themeConfig=config;
+ const [a,b,accent]=pbThemes[config.color];
+ const rgba=(hex,opacity)=>{const raw=hex.slice(1),parts=[0,2,4].map(i=>parseInt(raw.slice(i,i+2),16));return 'rgba('+parts.join(',')+','+(opacity/100)+')'};
+ player.style.setProperty('--pb-bg1',rgba(a,config.opacity));
+ player.style.setProperty('--pb-bg2',rgba(b,config.opacity));
+ player.style.setProperty('--pb-accent',accent);
+ player.style.setProperty('--pb-scale',String(config.scale/100));
+ player.classList.toggle('no-animation',!config.animate);
+ player.classList.toggle('no-cover',!config.showCover);
+}
+async function refreshTheme(){
+ try{
+  const r=await fetch('/api/theme',{cache:'no-store'});
+  if(r.ok)applyTheme(await r.json());
+ }catch{}
+}
+window.addEventListener('message',event=>{
+ if(event.origin!==location.origin||event.data?.type!=='pink-bunny-theme-preview')return;
+ applyTheme(event.data.value);
+});
+refreshTheme();
+if(!demo)setInterval(refreshTheme,2000);
