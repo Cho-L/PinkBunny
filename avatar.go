@@ -113,7 +113,7 @@ func (a *avatarService) handler(w http.ResponseWriter,r *http.Request){
   if r.Header.Get("Content-Type")!="application/octet-stream"{http.Error(w,"Unsupported format",415);return}
   r.Body=http.MaxBytesReader(w,r.Body,maxAvatarBytes+1);defer r.Body.Close()
   b,err:=io.ReadAll(r.Body)
-  if err!=nil{reply(w,413,map[string]string{"error":"Image exceeds 2MB"});return}
+  if err!=nil{reply(w,413,map[string]string{"error":"Image exceeds 4MB"});return}
   if _,err:=inspectAvatar(b);err!=nil{reply(w,400,map[string]string{"error":err.Error()});return}
   dir:=filepath.Dir(a.file)
   if err:=os.MkdirAll(dir,0700);err!=nil{reply(w,500,map[string]string{"error":"Cannot create image folder"});return}
