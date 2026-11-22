@@ -58,7 +58,7 @@
   chrome.runtime.onMessage.addListener((message,_sender,sendResponse)=>{
     if(message?.type!=='pinkbunny-player-command')return;
     const video=document.querySelector('video.html5-main-video')||document.querySelector('video');
-    if(!video){sendResponse({ok:false,error:'No YouTube video'});return;}
+    if(!video){sendResponse({ok:false,error:'유튜브 영상 플레이어를 찾지 못했습니다. 유튜브 탭을 새로고침해 주세요.'});return;}
     try{
       switch(message.action){
         case 'toggle':
@@ -78,15 +78,53 @@
           break;
         case 'previous':
         case 'next':{
-          const selectors=message.action==='next'
-            ? ['ytmusic-player-bar .next-button','button.ytp-next-button']
-            : ['ytmusic-player-bar .previous-button','button.ytp-prev-button'];
-          const button=selectors.map(sel=>document.querySelector(sel)).find(x=>x&&!x.disabled);
-          if(!button){sendResponse({ok:false,error:'Playlist transport button not available'});return;}
-          button.click();break;
+          const isNext=message.action==='next';
+          // YouTube Music has shipped several player-bar layouts. Prefer
+          // native controls rather than guessing the next recommended video.
+          const selectors=isNext
+            ? ['ytmusic-player-bar .next-button','ytmusic-app-layout .next-button',
+               'ytmusic-player-page .next-button','button.ytp-next-button']
+            : ['ytmusic-player-bar .previous-button','ytmusic-app-layout .previous-button',
+               'ytmusic-player-page .previous-button','button.ytp-prev-button'];
+          const button=selectors.map(sel=>document.querySelector(sel))
+            .find(el=>el&&!el.disabled&&el.getAttribute?.('aria-disabled')!=='true'
+              &&(!el.getClientRects||el.getClientRects().length>0));
+          if(!button){
+            sendResponse({ok:false,error:'이 유튜브 화면에서 '+(isNext?'다음':'이전')+
+              ' 버튼을 찾을 수 없습니다. 재생목록을 재생하거나 유튜브의 해당 버튼이 보이는지 확인해 주세요.'});
+            return;
+          }
+          button.click();
+          sendResponse({ok:true,action:message.action});
+          setTimeout(read,150);
+          return;
         }
-        case 'volumeUp':video.volume=Math.min(1,Math.round((video.volume+0.1)*100)/100);break;
-        case 'volumeDown':video.volume=Math.max(0,Math.round((video.volume-0.1)*100)/100);break;
+        case 'volumeUp':
+        case 'volumeDown':{
+          const before=Number(video.volume);
+          const mutedBefore=!!video.muted;
+          if(!Number.isFinite(before)){
+            sendResponse({ok:false,error:'이 유튜브 플레이어의 볼륨을 읽지 못했습니다.'});
+            return;
+          }
+          if(message.action==='volumeUp'){
+            if(video.muted)video.muted=false;
+            video.volume=Math.min(1,Math.round((before+0.1)*100)/100);
+          }else{
+            video.volume=Math.max(0,Math.round((before-0.1)*100)/100);
+          }
+          const actual=Number(video.volume);
+          const muted=!!video.muted;
+          if(actual===before&&muted===mutedBefore){
+            sendResponse({ok:false,error:message.action==='volumeUp'
+              ?'이미 최대 음량이거나 플레이어가 음량 변경을 허용하지 않습니다.'
+              :'이미 최소 음량이거나 플레이어가 음량 변경을 허용하지 않습니다.'});
+            return;
+          }
+          sendResponse({ok:true,volumePercent:Math.round(actual*100),muted});
+          setTimeout(read,100);
+          return;
+        }
         default:sendResponse({ok:false,error:'Invalid command'});return;
       }
       sendResponse({ok:true});setTimeout(read,100);
