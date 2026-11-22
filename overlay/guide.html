@@ -70,6 +70,14 @@ figcaption{font-size:.9rem;color:#8f7083;margin-top:8px}nav.guide-nav{display:fl
   desc.textContent=two?'Pink Bunny와 OBS는 송출 PC에, Chrome 확장 프로그램은 음악을 재생하는 다른 PC에 설치하세요.':'2컴 방송이어도 음악을 송출 PC에서 재생하면 이 안내를 선택하세요. 연결 코드는 입력하지 않아도 됩니다.';
  }
  here.addEventListener('click',()=>setMode(false));other.addEventListener('click',()=>setMode(true));
+ function openLinkedFeature(){
+  const id=decodeURIComponent(location.hash.slice(1));
+  if(!id.startsWith('feature-'))return;
+  const panel=document.getElementById(id);
+  if(panel&&panel.tagName==='DETAILS')panel.open=true;
+ }
+ window.addEventListener('hashchange',openLinkedFeature);
+ openLinkedFeature();
 })();
 </script>
 </body>
