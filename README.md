@@ -24,6 +24,14 @@
 
 설치 도우미가 자동으로 열리지 않으면 송출 PC 브라우저에서 `http://127.0.0.1:38765/setup`을 열어주세요.
 
+### 선택 기능: 설치 도우미에서 자동화하기
+
+- **Windows 자동 시작:** 설치 도우미의 버튼으로 켜거나 끌 수 있습니다. 사용자 계정의 시작 프로그램만 변경하며 관리자 권한은 필요하지 않습니다. EXE 파일을 옮기면 설정을 다시 해야 합니다.
+- **연결 진단:** 서버가 실행 중인지, 유튜브 제목이 도착했는지 확인합니다.
+- **OBS 자동 소스 추가:** OBS Studio에서 **도구 → WebSocket 서버 설정**에 들어가 서버를 활성화합니다. 설치 도우미에 포트(기본 4455)와 설정한 암호를 입력한 뒤 **OBS 소스 자동 추가**를 누릅니다. 프로그램은 현재 장면에 `Pink Bunny Player`를 추가하며, 이미 동일한 이름의 입력 소스가 있으면 중복 생성하지 않습니다. OBS 소스 자동 추가가 실패하면 일반 브라우저 소스 수동 추가를 이용하세요.
+- **업데이트:** [GitHub 최신 베타](https://github.com/Cho-L/PinkBunny/releases/tag/beta)에서 새 ZIP을 확인해 수동 교체할 수 있습니다. 무인 자동 업데이트는 아직 지원하지 않습니다.
+- **종료:** 현재는 Windows 작업 관리자에서 PinkBunny.exe를 종료하거나 로그인 세션을 종료해야 합니다. 정식 트레이 UI는 개발 중입니다.
+
 ## 🐰 특징
 
 - 유튜브 영상 제목·채널명 자동 감지, 재생/일시정지 표시
@@ -62,4 +70,4 @@ go build -o PinkBunny.exe .
 
 코드는 `main.go`(로컬 서버), `extension/`(크롬 확장), `overlay/`(OBS 위젯), `.github/workflows/`(Windows 자동 빌드)에 있습니다.
 
-> **베타 안내:** GitHub Actions 빌드는 통과해도 실제 서로 다른 Windows 환경 및 OBS/Chrome 연동은 추가 검증이 필요합니다. 문제는 GitHub Issues에 알려 주세요.
+> **베타 안내:** OBS WebSocket 자동 소스 추가와 Windows 자동 시작은 코드가 구현됐지만 실제 다양한 Windows/OBS 환경에서의 통합 검증은 필요합니다.  GitHub Actions 빌드는 통과해도 실제 서로 다른 Windows 환경 및 OBS/Chrome 연동은 추가 검증이 필요합니다. 문제는 GitHub Issues에 알려 주세요.
