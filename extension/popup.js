@@ -6,6 +6,17 @@ if(fullPage){
 }else{
  document.getElementById('openDashboard').addEventListener('click',()=>chrome.tabs.create({url:chrome.runtime.getURL('popup.html?mode=full')}));
 }
+// Help opens the Pink Bunny server's bundled offline-friendly guide.
+document.getElementById('openFeatureGuide').addEventListener('click',async()=>{
+ const cfg=await chrome.storage.local.get(['server']);
+ const host=(cfg.server||'127.0.0.1').trim();
+ if(!validHost(host)){
+  const message=document.getElementById('status');
+  message.textContent='❌ 연결 주소를 확인한 후 기능 가이드를 열어 주세요.';
+  return;
+ }
+ chrome.tabs.create({url:'http://'+host+':38765/guide#features'});
+});
 function validHost(host){
  if(host==='localhost')return true;
  const parts=host.split('.');
