@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light">
-<title>Pink Bunny | 그림으로 보는 설치 안내</title>
+<title>Pink Bunny | 설치 · 기능 사용 그림 가이드</title>
 <style>
 :root{font-family:"Malgun Gothic",system-ui,-apple-system,sans-serif;color:#493547;background:#fff6fa}
 *{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#fff6fa,#f9e6f5);line-height:1.65}
@@ -17,7 +17,7 @@ button[aria-pressed=true]{border-color:#c75391;background:#f9dcea;color:#713453}
 figure{margin:13px 0;background:#fff9fc;border:1px solid #eed4e3;padding:13px;border-radius:18px;overflow:hidden}
 figure img{width:100%;height:auto;display:block;border-radius:12px}
 figure a{display:block;color:inherit;text-decoration:none}
-figcaption{font-size:.9rem;color:#8f7083;margin-top:8px}
+figcaption{font-size:.9rem;color:#8f7083;margin-top:8px}nav.guide-nav{display:flex;flex-wrap:wrap;gap:9px;margin:22px 0}nav.guide-nav a{background:#F7E0EF;border-radius:12px;padding:10px 15px;color:#984473;font-weight:700;text-decoration:none}.feature-index{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin:20px 0}.feature-index a{background:#FFF5FA;border:1px solid #F0D5E4;border-radius:12px;padding:14px;color:#8D4070;text-decoration:none;font-weight:750}.feature-index small{display:block;font-weight:450;color:#977587}.guide-panel{border:1px solid #EDD0E1;border-radius:16px;margin:12px 0;padding:0 16px;background:#FFF9FC;scroll-margin-top:25px}.guide-panel summary{padding:17px 6px;cursor:pointer;font-size:1.07rem;color:#89406F;font-weight:800}.guide-panel p{margin:0 6px 14px}.guide-panel figure{margin:9px 0 16px}.guide-panel:target{outline:3px solid #E9B0D0}.quick-steps{padding-left:24px}.quick-steps li{margin-bottom:7px}
 .links{display:flex;flex-wrap:wrap;gap:10px}
 .links a{padding:9px 14px;border-radius:10px;background:#f7e1ef;color:#924371;font-weight:700}
 .note{background:#fdf0f7;padding:13px 18px;border-radius:13px;border-left:4px solid #d16e9f}
@@ -27,9 +27,9 @@ figcaption{font-size:.9rem;color:#8f7083;margin-top:8px}
 </head>
 <body>
 <main>
-<h1>🐰 Pink Bunny 그림 설치 가이드</h1>
-<p class="sub">프로그램을 처음 설치하는 분을 위한 순서 안내입니다. 회원가입은 필요 없어요. Windows 송출 PC에서 시작하세요.</p>
-<h2>가장 먼저! 유튜브 음악을 어느 PC에서 재생하나요?</h2>
+<h1>🐰 Pink Bunny 그림 사용 가이드</h1>
+<p class="sub">처음 설치하는 방법부터 실제 방송 기능 사용법까지 그림으로 안내합니다. 설치가 끝났다면 아래 ‘기능 사용’부터 확인하세요.</p>
+<nav class="guide-nav" aria-label="그림 가이드 빠른 이동"><a href="#install">① 설치하기</a><a href="#features">② 기능 사용하기</a><a href="#troubleshooting">③ 문제 해결</a></nav><section id="install" aria-label="설치 단계"><h2>가장 먼저! 유튜브 음악을 어느 PC에서 재생하나요?</h2>
 <div class="choice" role="group" aria-label="음악 재생 PC 선택">
 <button id="musicHere" aria-pressed="true">🎵 송출 PC에서 재생해요</button>
 <button id="musicOther" aria-pressed="false">🖥️ 다른 PC에서 재생해요</button>
@@ -47,7 +47,7 @@ figcaption{font-size:.9rem;color:#8f7083;margin-top:8px}
 <h2>OBS 브라우저 소스 추가하기</h2>
 <p>OBS를 실행하는 <strong>송출 PC에서만</strong> 설정합니다. 브라우저 소스 주소는 항상 <strong>http://127.0.0.1:38765</strong>, 너비는 <strong>420</strong>, 높이는 <strong>130</strong>입니다.</p>
 <figure><a href="guide-obs-source.svg" target="_blank" rel="noopener"><img src="guide-obs-source.svg" loading="lazy" alt="OBS 브라우저 소스를 추가하고 URL과 크기를 지정하는 순서의 그림"/></a><figcaption>OBS 화면은 이해를 돕는 예시 그림입니다. 실제 OBS 버전에 따라 버튼 위치가 다를 수 있습니다.</figcaption></figure>
-<h2>안 될 때 가장 먼저 확인할 것</h2>
+</section><section id="features" aria-label="기능 사용 안내"><h2>✨ 설치 후에는? 기능 사용 그림 7장</h2><p>먼저 아래에서 필요한 기능을 선택하세요. 제목을 누르면 그림과 설명이 펼쳐집니다.</p><div class="feature-index"><a href="#feature-basic">확장 프로그램 기본 조작<small>연결 상태·큰 화면 설정·탭 목록</small></a><a href="#feature-tabs">OBS 표시 탭 고정·숨김<small>자동 선택·고정·숨김·복원</small></a><a href="#feature-controls">유튜브 재생 제어<small>재생/일시정지·음량·이전/다음</small></a><a href="#feature-design">방송 화면·캐릭터 꾸미기<small>4색 테마·3종 레이아웃·이미지 설정</small></a><a href="#feature-remote">1컴·2컴 원격 제어<small>음악을 재생하는 PC 기준·송출 PC 제어</small></a><a href="#feature-filters">광고·Shorts 스마트 방송 필터<small>OBS에 표시할 영상 정보만 자동 제외</small></a><a href="#feature-troubleshooting">연결·OBS·소리 문제 해결<small>자주 발생하는 증상별 점검</small></a></div><details id="feature-basic" class="guide-panel"><summary>확장 프로그램 기본 조작 — 그림·설명 펼치기</summary><p>Chrome 툴바의 Pink Bunny를 연 뒤 상단 연결 상태를 확인하세요. ‘연결 설정 · 문제 해결’에서 1컴 자동 연결 또는 2컴 주소를 설정하고, 드롭다운이 불편하면 ‘큰 화면에서 설정’을 누르세요.</p><figure><a href="guide-feature-extension.svg" target="_blank" rel="noopener"><img src="guide-feature-extension.svg" loading="lazy" alt="확장 프로그램 기본 조작 기능을 순서대로 표현한 그림 예시" /></a><figcaption>이미지를 누르면 확대됩니다. 실제 제품 화면을 이해하기 위한 예시로, 크롬·OBS 버전에 따라 버튼 배치가 다를 수 있습니다.</figcaption></figure></details><details id="feature-tabs" class="guide-panel"><summary>OBS 표시 탭 고정·숨김 — 그림·설명 펼치기</summary><p>기본은 자동 선택입니다. 특정 탭은 ‘이 탭 고정’으로 유지하고, 공개하지 않을 탭은 ‘이 탭 숨기기’로 OBS 표시에서 제외할 수 있어요. 고정 해제는 ‘자동 선택으로’를 사용합니다.</p><figure><a href="guide-feature-tabs.svg" target="_blank" rel="noopener"><img src="guide-feature-tabs.svg" loading="lazy" alt="OBS 표시 탭 고정·숨김 기능을 순서대로 표현한 그림 예시" /></a><figcaption>이미지를 누르면 확대됩니다. 실제 제품 화면을 이해하기 위한 예시로, 크롬·OBS 버전에 따라 버튼 배치가 다를 수 있습니다.</figcaption></figure></details><details id="feature-controls" class="guide-panel"><summary>유튜브 재생 제어 — 그림·설명 펼치기</summary><p>확장 프로그램에서 재생·일시정지, 음량 ±10%를 조절할 수 있습니다. 이전·다음 곡은 유튜브가 해당 버튼을 제공할 때만 동작합니다.</p><figure><a href="guide-feature-controls.svg" target="_blank" rel="noopener"><img src="guide-feature-controls.svg" loading="lazy" alt="유튜브 재생 제어 기능을 순서대로 표현한 그림 예시" /></a><figcaption>이미지를 누르면 확대됩니다. 실제 제품 화면을 이해하기 위한 예시로, 크롬·OBS 버전에 따라 버튼 배치가 다를 수 있습니다.</figcaption></figure></details><details id="feature-design" class="guide-panel"><summary>방송 화면·캐릭터 꾸미기 — 그림·설명 펼치기</summary><p>송출 PC의 설치 도우미 ‘Pink Bunny 디자인 설정’에서 테마와 레이아웃을 고르고, ‘내 캐릭터 이미지 등록’으로 PNG/JPEG/GIF/WebP 이미지를 올린 뒤 ‘설정 저장’을 누르세요.</p><figure><a href="guide-feature-design.svg" target="_blank" rel="noopener"><img src="guide-feature-design.svg" loading="lazy" alt="방송 화면·캐릭터 꾸미기 기능을 순서대로 표현한 그림 예시" /></a><figcaption>이미지를 누르면 확대됩니다. 실제 제품 화면을 이해하기 위한 예시로, 크롬·OBS 버전에 따라 버튼 배치가 다를 수 있습니다.</figcaption></figure></details><details id="feature-remote" class="guide-panel"><summary>1컴·2컴 원격 제어 — 그림·설명 펼치기</summary><p>송출 PC에서 음악을 재생하면 1컴 방식으로 연결합니다. 다른 PC에서 음악을 재생하는 경우에만 2컴 연결 주소가 필요합니다. 송출 PC 설치 도우미의 ‘⑥ 유튜브 원격 제어’에서 명령을 요청할 수 있습니다.</p><figure><a href="guide-feature-remote.svg" target="_blank" rel="noopener"><img src="guide-feature-remote.svg" loading="lazy" alt="1컴·2컴 원격 제어 기능을 순서대로 표현한 그림 예시" /></a><figcaption>이미지를 누르면 확대됩니다. 실제 제품 화면을 이해하기 위한 예시로, 크롬·OBS 버전에 따라 버튼 배치가 다를 수 있습니다.</figcaption></figure></details><details id="feature-filters" class="guide-panel"><summary>광고·Shorts 스마트 방송 필터 — 그림·설명 펼치기</summary><p>음악 PC 확장 프로그램의 ‘스마트 방송 필터’에서 광고 재생 중 숨김과 Shorts 제외를 각각 설정합니다. 유튜브 광고 자체를 차단하는 기능은 아닙니다.</p><figure><a href="guide-feature-filters.svg" target="_blank" rel="noopener"><img src="guide-feature-filters.svg" loading="lazy" alt="광고·Shorts 스마트 방송 필터 기능을 순서대로 표현한 그림 예시" /></a><figcaption>이미지를 누르면 확대됩니다. 실제 제품 화면을 이해하기 위한 예시로, 크롬·OBS 버전에 따라 버튼 배치가 다를 수 있습니다.</figcaption></figure></details><details id="feature-troubleshooting" class="guide-panel"><summary>연결·OBS·소리 문제 해결 — 그림·설명 펼치기</summary><p>연결 실패는 송출 PC의 Pink Bunny 실행 여부와 연결 코드를 확인하세요. OBS 화면이 비면 브라우저 소스 주소·크기를 확인하고, 음악 소리가 안 들리면 OBS 오디오 캡처를 설정하세요.</p><figure><a href="guide-feature-troubleshoot.svg" target="_blank" rel="noopener"><img src="guide-feature-troubleshoot.svg" loading="lazy" alt="연결·OBS·소리 문제 해결 기능을 순서대로 표현한 그림 예시" /></a><figcaption>이미지를 누르면 확대됩니다. 실제 제품 화면을 이해하기 위한 예시로, 크롬·OBS 버전에 따라 버튼 배치가 다를 수 있습니다.</figcaption></figure></details></section><section id="troubleshooting" aria-label="자주 묻는 문제"><h2>안 될 때 가장 먼저 확인할 것</h2>
 <div class="note">Pink Bunny가 송출 PC에서 실행 중인가요? Chrome 확장 프로그램에서 연결했나요? 유튜브 탭을 새로고침했나요? OBS 브라우저 소스의 URL과 크기가 올바른가요?</div>
 <p class="sub">※ Pink Bunny는 <strong>영상 제목과 재생 정보</strong>를 OBS에 보여줍니다. <strong>음악 소리 전송</strong>은 별도 OBS 오디오 설정이 필요해요. 두 PC 연결은 같은 신뢰할 수 있는 사설망에서만 사용하고, 연결 주소의 인증 코드를 공개하지 마세요.</p>
 <div class="links">
@@ -56,7 +56,7 @@ figcaption{font-size:.9rem;color:#8f7083;margin-top:8px}
 <a href="guide-chrome-extension.svg" target="_blank" rel="noopener">Chrome 안내</a>
 <a href="guide-obs-source.svg" target="_blank" rel="noopener">OBS 안내</a>
 </div>
-<p class="footer">이 가이드는 설치 파일과 함께 제공되는 오프라인 문서입니다. 자동 연결, 방송용 디자인 변경 등은 Pink Bunny 실행 후 열리는 설치 도우미에서 할 수 있습니다.</p>
+<p><a href="#features">↥ 기능 사용 그림 다시 보기</a></p></section><p class="footer">이 가이드는 설치 파일과 함께 제공되는 오프라인 문서입니다. 자동 연결, 방송용 디자인 변경 등은 Pink Bunny 실행 후 열리는 설치 도우미에서 할 수 있습니다.</p>
 </main>
 <script>
 (function(){
